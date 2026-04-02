@@ -267,7 +267,7 @@
         const a = randInt(r.mul[0], r.mul[1]);
         const b = randInt(r.mul[0], r.mul[1]);
         const ans = a * b;
-        const promptHTML = `Compute <span class="math">${a} \\x ${b}</span>.`;
+        const promptHTML = `Compute <span class="math">${a}</span> <span class="math-thin">x</span> <span class="math">${b}</span>.`;
         return {
           typeLabel: "Multiply",
           promptHTML,
