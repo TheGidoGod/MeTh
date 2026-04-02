@@ -272,7 +272,7 @@
           typeLabel: "Multiply",
           promptHTML,
           hintHTML: `Break it down: ${a} is ${a} (no trick), multiply by ${b}.`,
-          explanationHTML: `${a} \\times ${b} = <span class="math">${ans}</span>.`,
+          explanationHTML: `${a} times ${b} = <span class="math">${ans}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
             return n !== null && n === ans;
@@ -354,12 +354,12 @@
         const a = randInt(r.modA[0], r.modA[1]);
         const b = randInt(r.modB[0], r.modB[1]);
         const ans = a % b;
-        const promptHTML = `Compute <span class="math">${a} \\bmod ${b}</span>.`;
+        const promptHTML = `Find the remainder when <span class="math">${a}</span> is divided by <span class="math">${b}</span>.`;
         return {
           typeLabel: "Mod (Remainders)",
           promptHTML,
-          hintHTML: `Remainder after dividing: ${a} = ${b} \\times (something) + ${ans}.`,
-          explanationHTML: `${a} \\bmod ${b} = <span class="math">${ans}</span>.`,
+          hintHTML: `Think: ${a} ÷ ${b}. What number is left over after making equal groups of ${b}?`,
+          explanationHTML: `After dividing ${a} by ${b}, the remainder is <span class="math">${ans}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
             return n !== null && n === ans;
@@ -634,13 +634,13 @@
         const expected = diceCount * (sides + 1) / 2;
         const timesText = diceCount === 1 ? "once" : `${diceCount} times`;
         const promptHTML = `You roll a fair ${sides}-sided die ${timesText}. What is the average total you should expect?`;
-        const hint = `Expected totals add up: E(total) = ${diceCount} x E(one die) = ${diceCount} x (${sides}+1)/2.`;
+        const hint = `Since this is a dice, you will need to use meridian (average): (number of sides + 1) / 2.`;
         const expected2 = Math.abs(expected % 1) < 1e-9 ? String(expected.toFixed(0)) : expected.toFixed(1);
         return {
           typeLabel: "Expected Value",
           promptHTML,
           hintHTML: hint,
-          explanationHTML: `E(one die) = (${sides}+1)/2 = ${(sides + 1) / 2}. So E(total) = ${diceCount} \\times ${(sides + 1) / 2} = <span class="math">${expected2}</span>.`,
+          explanationHTML: `The expected value of one die is ${sides + 1} / 2 = <span class="math">${(sides + 1) / 2}</span>. So the expected value of ${diceCount} dice is ${diceCount} x <span class="math">${(sides + 1) / 2}</span> = <span class="math">${expected2}</span>.`,
           validate: (input) => {
             const val = parseNumberLoose(input);
             if (val === null) return false;
@@ -699,13 +699,13 @@
         const product = a * b;
         const hideFirst = Math.random() < 0.5;
         const promptHTML = hideFirst
-          ? `Fill in the missing number: <span class="math">? x ${b} = ${product}</span>.`
-          : `Fill in the missing number: <span class="math">${a} x ? = ${product}</span>.`;
+          ? `Find the missing number (type what goes in the box): <span class="math">\\square \\times ${b} = ${product}</span>.`
+          : `Find the missing number (type what goes in the box): <span class="math">${a} \\times \\square = ${product}</span>.`;
         const ans = hideFirst ? a : b;
         return {
           typeLabel: "Times Table",
           promptHTML,
-          hintHTML: `Use division to find the missing factor: ${product} / ${hideFirst ? b : a}.`,
+          hintHTML: `Use division to find the missing factor: ${product} ÷ ${hideFirst ? b : a}.`,
           explanationHTML: `The missing number is <span class="math">${ans}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
@@ -1097,6 +1097,12 @@
     if (state.checked) return;
     const input = els.answerInput.value;
     const q = state.currentQuestion;
+    if (!input || input.trim() === "") {
+      showFeedback("neutral", "Please type an answer first.");
+      els.explanation.innerHTML = "Enter your answer in the box, then press Check.";
+      els.answerInput.focus();
+      return;
+    }
 
     const ok = q.validate(input);
     state.checked = true;
