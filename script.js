@@ -491,8 +491,8 @@
         return {
           typeLabel: "Percent",
           promptHTML,
-          hintHTML: `Percent means “out of 100”: compute <span class="math">(${n} / ${d}) \\x 100</span>.`,
-          explanationHTML: `(${n}/${d}) \\x 100 = <span class="math">${p}</span>%.`,
+          hintHTML: `Percent means “out of 100”: compute <span class="math">(${n} / ${d}) <span class="math-thin>x</span 100</span>.`,
+          explanationHTML: `(${n}/${d}) <span class="math-thin"> x </span> 100 = <span class="math">${p}</span>%.`,
           validate: (input) => {
             const val = parseNumberLoose(input);
             return val !== null && Math.round(val) === p;
@@ -540,7 +540,7 @@
         // ax + b = c
         const promptHTML = `Solve for <span class="math">x</span>: <span class="math">${a}x + ${b} = ${c}</span>.`;
         const hintHTML = `Start by subtracting ${b} from both sides, then divide by ${a}.`;
-        const explanationHTML = `Subtract: ${a}x = ${c} - ${b} = ${a} \\x ${x}. Then divide by ${a}: x = <span class="math">${x}</span>.`;
+        const explanationHTML = `Subtract: ${a}x = ${c} - ${b} = ${a} <span class="math-thin"> x </span> ${x}. Then divide by ${a}: x = <span class="math">${x}</span>.`;
         return {
           typeLabel: "Linear Equation",
           promptHTML,
@@ -568,10 +568,10 @@
         const ans = askArea ? w * h : 2 * (w + h);
         const label = askArea ? "Area" : "Perimeter";
         const hintHTML = askArea
-          ? `Area = width \\x height.`
+          ? `Area = width <span class="math-thin"> x </span> height.`
           : `Perimeter = 2(width + height).`;
         const explanationHTML = askArea
-          ? `${w} \\x ${h} = <span class="math">${ans}</span>.`
+          ? `${w} <span class="math-thin"> x </span> ${h} = <span class="math">${ans}</span>.`
           : `2(${w} + ${h}) = <span class="math">${ans}</span>.`;
         return {
           typeLabel: `Rectangle ${label}`,
@@ -699,8 +699,8 @@
         const product = a * b;
         const hideFirst = Math.random() < 0.5;
         const promptHTML = hideFirst
-          ? `Find the missing number (type what goes in the box): <span class="math">\\square \\x ${b} = ${product}</span>.`
-          : `Find the missing number (type what goes in the box): <span class="math">${a} \\x \\square = ${product}</span>.`;
+          ? `Find the missing number (type what goes in the box): <span class="math">\\square <span class="math-thin"> x </span> ${b} = ${product}</span>.`
+          : `Find the missing number (type what goes in the box): <span class="math">${a} <span class="math-thin"> x </span> \\square = ${product}</span>.`;
         const ans = hideFirst ? a : b;
         return {
           typeLabel: "Times Table",
