@@ -293,7 +293,7 @@
         return {
           typeLabel: "Exact Division",
           promptHTML,
-          hintHTML: `If ${a} = ${d} \\x ${q}, then the quotient is <span class="math">${q}</span>.`,
+          hintHTML: `Think multiplication backward: what number times ${d} gives ${a}?`,
           explanationHTML: `${a} \\div ${d} = <span class="math">${q}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
@@ -516,7 +516,7 @@
         return {
           typeLabel: "Percent -> Decimal",
           promptHTML,
-          hintHTML: `Divide by 100: ${p}% = ${p}/100 = ${expected2}.`,
+          hintHTML: `To convert percent to decimal, divide by 100 (move decimal point two places left).`,
           explanationHTML: `${p}% = <span class="math">${p}/100</span> = <span class="math">${expected2}</span>.`,
           validate: (input) => {
             const normalized = input.trim().replace("%", "");
