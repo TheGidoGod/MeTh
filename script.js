@@ -868,6 +868,11 @@
     return `${m.toString().padStart(1, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  const formatScore = (score) => {
+    const rounded = Math.round(score * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  };
+
   const showFeedback = (kind, text) => {
     els.feedback.classList.remove("feedback--good", "feedback--bad", "feedback--neutral");
     els.feedback.classList.add(
@@ -1063,8 +1068,8 @@
     const total = state.mode === "arcade" ? state.totalQuestions : state.questionIndex;
     const scoreText =
       state.mode === "arcade"
-        ? `${state.score} / ${state.totalQuestions}`
-        : `${state.score} correct answers`;
+        ? `${formatScore(state.score)} / ${state.totalQuestions}`
+        : `${formatScore(state.score)} correct answers`;
     els.endTitle.textContent = title;
     els.endBody.innerHTML = `
       <div><b>Score:</b> ${scoreText}</div>
@@ -1108,9 +1113,10 @@
     state.checked = true;
 
     if (ok) {
-      state.score += 1;
+      const pointsAwarded = state.hinted ? 0.5 : 1;
+      state.score += pointsAwarded;
       state.streak += 1;
-      showFeedback("good", `Correct! <span class="math">+1</span>`);
+      showFeedback("good", `Correct! <span class="math">+${pointsAwarded}</span>`);
       els.explanation.innerHTML = q.explanationHTML;
       renderMathIfPossible(els.explanation);
       // Card juice + confetti
@@ -1119,7 +1125,7 @@
       const count = state.streak >= 5 ? 26 : state.streak >= 3 ? 22 : 18;
       spawnConfetti({ count, colors: theme.confetti, dxRange: [-140, 140] });
       window.setTimeout(() => applyCardEffect(null), 720);
-      els.scoreValue.textContent = String(state.score);
+      els.scoreValue.textContent = formatScore(state.score);
       els.streakValue.textContent = String(state.streak);
       showAchievements();
     } else {
