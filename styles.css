@@ -511,6 +511,12 @@ select:focus{
   white-space:nowrap;
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+.math-thin{
+  font-weight:900;
+  padding:0 2px;
+  white-space:nowrap;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
 .prompt b{ color: rgba(234,240,255,.98); }
 .inputRow{
   display:flex;
