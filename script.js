@@ -267,12 +267,12 @@
         const a = randInt(r.mul[0], r.mul[1]);
         const b = randInt(r.mul[0], r.mul[1]);
         const ans = a * b;
-        const promptHTML = `Compute <span class="math">${a} \\times ${b}</span>.`;
+        const promptHTML = `Compute <span class="math">${a} \\x ${b}</span>.`;
         return {
           typeLabel: "Multiply",
           promptHTML,
           hintHTML: `Break it down: ${a} is ${a} (no trick), multiply by ${b}.`,
-          explanationHTML: `${a} times ${b} = <span class="math">${ans}</span>.`,
+          explanationHTML: `${a} x ${b} = <span class="math">${ans}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
             return n !== null && n === ans;
@@ -293,7 +293,7 @@
         return {
           typeLabel: "Exact Division",
           promptHTML,
-          hintHTML: `If ${a} = ${d} \\times ${q}, then the quotient is <span class="math">${q}</span>.`,
+          hintHTML: `If ${a} = ${d} \\x ${q}, then the quotient is <span class="math">${q}</span>.`,
           explanationHTML: `${a} \\div ${d} = <span class="math">${q}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
@@ -491,8 +491,8 @@
         return {
           typeLabel: "Percent",
           promptHTML,
-          hintHTML: `Percent means “out of 100”: compute <span class="math">(${n} / ${d}) \\times 100</span>.`,
-          explanationHTML: `(${n}/${d}) \\times 100 = <span class="math">${p}</span>%.`,
+          hintHTML: `Percent means “out of 100”: compute <span class="math">(${n} / ${d}) \\x 100</span>.`,
+          explanationHTML: `(${n}/${d}) \\x 100 = <span class="math">${p}</span>%.`,
           validate: (input) => {
             const val = parseNumberLoose(input);
             return val !== null && Math.round(val) === p;
@@ -540,7 +540,7 @@
         // ax + b = c
         const promptHTML = `Solve for <span class="math">x</span>: <span class="math">${a}x + ${b} = ${c}</span>.`;
         const hintHTML = `Start by subtracting ${b} from both sides, then divide by ${a}.`;
-        const explanationHTML = `Subtract: ${a}x = ${c} - ${b} = ${a} \\times ${x}. Then divide by ${a}: x = <span class="math">${x}</span>.`;
+        const explanationHTML = `Subtract: ${a}x = ${c} - ${b} = ${a} \\x ${x}. Then divide by ${a}: x = <span class="math">${x}</span>.`;
         return {
           typeLabel: "Linear Equation",
           promptHTML,
@@ -568,10 +568,10 @@
         const ans = askArea ? w * h : 2 * (w + h);
         const label = askArea ? "Area" : "Perimeter";
         const hintHTML = askArea
-          ? `Area = width \\times height.`
+          ? `Area = width \\x height.`
           : `Perimeter = 2(width + height).`;
         const explanationHTML = askArea
-          ? `${w} \\times ${h} = <span class="math">${ans}</span>.`
+          ? `${w} \\x ${h} = <span class="math">${ans}</span>.`
           : `2(${w} + ${h}) = <span class="math">${ans}</span>.`;
         return {
           typeLabel: `Rectangle ${label}`,
@@ -632,8 +632,8 @@
         const diceCount = pick(r.diceDice);
         // Expected value of one die = (sides + 1) / 2
         const expected = diceCount * (sides + 1) / 2;
-        const timesText = diceCount === 1 ? "once" : `${diceCount} times`;
-        const promptHTML = `You roll a fair ${sides}-sided die ${timesText}. What is the average total you should expect?`;
+        const xText = diceCount === 1 ? "once" : `${diceCount} x`;
+        const promptHTML = `You roll a fair ${sides}-sided die ${xText}. What is the average total you should expect?`;
         const hint = `Since this is a dice, you will need to use meridian (average): (number of sides + 1) / 2.`;
         const expected2 = Math.abs(expected % 1) < 1e-9 ? String(expected.toFixed(0)) : expected.toFixed(1);
         return {
@@ -699,8 +699,8 @@
         const product = a * b;
         const hideFirst = Math.random() < 0.5;
         const promptHTML = hideFirst
-          ? `Find the missing number (type what goes in the box): <span class="math">\\square \\times ${b} = ${product}</span>.`
-          : `Find the missing number (type what goes in the box): <span class="math">${a} \\times \\square = ${product}</span>.`;
+          ? `Find the missing number (type what goes in the box): <span class="math">\\square \\x ${b} = ${product}</span>.`
+          : `Find the missing number (type what goes in the box): <span class="math">${a} \\x \\square = ${product}</span>.`;
         const ans = hideFirst ? a : b;
         return {
           typeLabel: "Times Table",
