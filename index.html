@@ -51,6 +51,7 @@
         <div class="stat">
           <div class="stat__label">Score</div>
           <div class="stat__value" id="scoreValue">0</div>
+          <div class="stat__meta" id="scoreMeta">Each question is worth 1 point.</div>
         </div>
         <div class="stat">
           <div class="stat__label">Streak</div>
@@ -100,19 +101,12 @@
             />
             <button class="btn btn--primary" id="checkBtn" disabled>Check</button>
           </div>
-          <div class="symbolPad" aria-label="Answer symbols">
-            <button class="btn btn--ghost" type="button" data-answer-insert="/">/</button>
-            <button class="btn btn--ghost" type="button" data-answer-insert="backslash">\</button>
-            <button class="btn btn--ghost" type="button" data-answer-insert=".">.</button>
-            <button class="btn btn--ghost" type="button" data-answer-insert="-">-</button>
-            <button class="btn btn--ghost" type="button" data-answer-action="backspace">DEL</button>
-          </div>
 
           <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
           <div class="explain" id="explanation"></div>
 
           <div class="buttonRow">
-            <button class="btn btn--ghost" id="hintBtn" disabled>Hint</button>
+            <button class="btn btn--ghost" id="hintBtn" disabled>Hint (-0.5 pt)</button>
             <button class="btn btn--ghost" id="skipBtn" disabled>Skip</button>
             <button class="btn btn--next" id="newProblemBtn" disabled>Next</button>
           </div>
