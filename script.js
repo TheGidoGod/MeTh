@@ -1086,7 +1086,6 @@
       <div><b>Score:</b> ${scoreText}</div>
       <div style="margin-top:6px;"><b>Best streak:</b> ${Math.max(state.streak, 0)}</div>
       <div style="margin-top:6px; color: rgba(234,240,255,.78);">${reason ? reason : ""} </div>
-      <div style="margin-top:10px; color: rgba(234,240,255,.72);">Tip: try switching problem types in the mix.</div>
     `;
 
     state.currentQuestion = null;
