@@ -246,6 +246,12 @@ body{
   font-size:24px;
   font-weight:800;
 }
+.stat__meta{
+  margin-top:4px;
+  font-size:12px;
+  color:var(--muted2);
+  line-height:1.35;
+}
 
 .layout{
   max-width:1080px;
