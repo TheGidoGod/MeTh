@@ -7,6 +7,7 @@
     changeTopicBtn: $("#changeTopicBtn"),
     changeTopicBtnModal: $("#changeTopicBtnModal"),
     scoreValue: $("#scoreValue"),
+    scoreMeta: $("#scoreMeta"),
     streakValue: $("#streakValue"),
     timerValue: $("#timerValue"),
     progressValue: $("#progressValue"),
@@ -139,6 +140,8 @@
     return { n, d };
   };
 
+  const formatSignedNumber = (n) => (n < 0 ? `- ${Math.abs(n)}` : `+ ${n}`);
+
   const DIFFICULTY = {
     easy: {
       label: "Easy",
@@ -270,12 +273,12 @@
         const a = randInt(r.mul[0], r.mul[1]);
         const b = randInt(r.mul[0], r.mul[1]);
         const ans = a * b;
-        const promptHTML = `Compute <span class="math">${a}</span> <span class="math-thin">x</span> <span class="math">${b}</span>.`;
+        const promptHTML = `Compute <span class="math">${a}</span> <span class="math-thin">*</span> <span class="math">${b}</span>.`;
         return {
           typeLabel: "Multiply",
           promptHTML,
-          hintHTML: `Break it down: ${a} is ${a} (no trick), multiply by ${b}.`,
-          explanationHTML: `${a} x ${b} = <span class="math">${ans}</span>.`,
+          hintHTML: `Think of multiplication as repeated addition: add <span class="math">${a}</span> a total of <span class="math">${b}</span> times, or use your times tables.`,
+          explanationHTML: `${a} <span class="math-thin">*</span> ${b} = <span class="math">${ans}</span>.`,
           validate: (input) => {
             const n = parseNumberLoose(input);
             return n !== null && n === ans;
@@ -436,7 +439,7 @@
           typeLabel: "Factors",
           promptHTML,
           hintHTML: `Factors come in pairs: if d divides n, then n/d also divides n.`,
-          explanationHTML: `There are <span class="math">${ans}</span> positive factors of ${n}.`,
+          explanationHTML: `List or pair the positive divisors of ${n}. Counting them gives <span class="math">${ans}</span> total positive factors.`,
           validate: (input) => {
             const val = parseNumberLoose(input);
             return val !== null && val === ans;
@@ -494,8 +497,8 @@
         return {
           typeLabel: "Percent",
           promptHTML,
-          hintHTML: `Percent means “out of 100”: compute <span class="math">(${n} / ${d}) <span class="math-thin>x</span 100</span>.`,
-          explanationHTML: `(${n}/${d}) <span class="math-thin"> x </span> 100 = <span class="math">${p}</span>%.`,
+          hintHTML: `Percent means “out of 100.” Convert the fraction to a decimal, then multiply by <span class="math">100</span>.`,
+          explanationHTML: `<span class="math">${n}/${d}</span> = <span class="math">${p}/100</span>, so the percent is <span class="math">${p}</span>%.`,
           validate: (input) => {
             const val = parseNumberLoose(input);
             return val !== null && Math.round(val) === p;
@@ -541,9 +544,13 @@
         const b = randInt(r.linearB[0], r.linearB[1]);
         const c = a * x + b;
         // ax + b = c
-        const promptHTML = `Solve for <span class="math">x</span>: <span class="math">${a}x + ${b} = ${c}</span>.`;
-        const hintHTML = `Start by subtracting ${b} from both sides, then divide by ${a}.`;
-        const explanationHTML = `Subtract: ${a}x = ${c} - ${b} = ${a} <span class="math-thin"> x </span> ${x}. Then divide by ${a}: x = <span class="math">${x}</span>.`;
+        const promptHTML = `Solve for <span class="math">x</span>: <span class="math">${a}x ${formatSignedNumber(b)} = ${c}</span>.`;
+        const hintHTML = b >= 0
+          ? `Subtract <span class="math">${b}</span> from both sides, then divide by <span class="math">${a}</span>.`
+          : `Add <span class="math">${Math.abs(b)}</span> to both sides, then divide by <span class="math">${a}</span>.`;
+        const explanationHTML = b >= 0
+          ? `Subtract <span class="math">${b}</span> from both sides: <span class="math">${a}x = ${c - b}</span>. Then divide by <span class="math">${a}</span> to get <span class="math">x = ${x}</span>.`
+          : `Add <span class="math">${Math.abs(b)}</span> to both sides: <span class="math">${a}x = ${c - b}</span>. Then divide by <span class="math">${a}</span> to get <span class="math">x = ${x}</span>.`;
         return {
           typeLabel: "Linear Equation",
           promptHTML,
@@ -611,8 +618,8 @@
         const x2 = x1 + signX * t.dx;
         const y2 = y1 + signY * t.dy;
         const promptHTML = `What is the distance between points <span class="math">(${x1}, ${y1})</span> and <span class="math">(${x2}, ${y2})</span>? (Use the distance formula)`;
-        const hintHTML = `Use distance formula: distance = sqrt((x2 - x1)^2 + (y2 - y1)^2). First find how far apart the x-values and y-values are.`;
-        const explanationHTML = `The x-values are ${Math.abs(x2 - x1)} apart and the y-values are ${Math.abs(y2 - y1)} apart. So distance = sqrt(${t.dx}^2 + ${t.dy}^2) = <span class="math">${t.h}</span>.`;
+        const hintHTML = `Use the distance formula: <span class="math">\\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}</span>. First find the horizontal and vertical differences.`;
+        const explanationHTML = `The points are <span class="math">${Math.abs(x2 - x1)}</span> units apart horizontally and <span class="math">${Math.abs(y2 - y1)}</span> units apart vertically, so the distance is <span class="math">\\sqrt{${t.dx}^2 + ${t.dy}^2} = ${t.h}</span>.`;
         return {
           typeLabel: "Distance",
           promptHTML,
@@ -636,14 +643,14 @@
         // Expected value of one die = (sides + 1) / 2
         const expected = diceCount * (sides + 1) / 2;
         const xText = diceCount === 1 ? "once" : `${diceCount} x`;
-        const promptHTML = `You roll a fair ${sides}-sided die ${xText}. What is the average total you should expect?`;
-        const hint = `Since this is a dice, you will need to use meridian (average): (number of sides + 1) / 2.`;
+        const promptHTML = `You roll a fair ${sides}-sided die ${xText}. What is the expected value?`;
+        const hint = `For one fair die, the mean (average) roll is <span class="math">(${sides} + 1)/2</span>. Then multiply by the number of dice.`;
         const expected2 = Math.abs(expected % 1) < 1e-9 ? String(expected.toFixed(0)) : expected.toFixed(1);
         return {
           typeLabel: "Expected Value",
           promptHTML,
           hintHTML: hint,
-          explanationHTML: `The expected value of one die is ${sides + 1} / 2 = <span class="math">${(sides + 1) / 2}</span>. So the expected value of ${diceCount} dice is ${diceCount} x <span class="math">${(sides + 1) / 2}</span> = <span class="math">${expected2}</span>.`,
+          explanationHTML: `One fair ${sides}-sided die has expected value <span class="math">(${sides} + 1)/2 = ${(sides + 1) / 2}</span>. For ${diceCount} dice, multiply by <span class="math">${diceCount}</span>: <span class="math">${diceCount} * ${(sides + 1) / 2} = ${expected2}</span>.`,
           validate: (input) => {
             const val = parseNumberLoose(input);
             if (val === null) return false;
@@ -676,7 +683,7 @@
           : `Average = (sum of values) / (number of values).`;
         const explanationHTML = askMedian
           ? `When sorted, the middle (median) value is <span class="math">${median}</span>.`
-          : `Average = (sum) / ${nums.length} = <span class="math">${mean.toFixed(2)}</span>.`;
+          : `Add the numbers and divide by <span class="math">${nums.length}</span>. The average is <span class="math">${mean.toFixed(2)}</span>.`;
         return {
           typeLabel: askMedian ? "Median" : "Average",
           promptHTML,
@@ -702,8 +709,8 @@
         const product = a * b;
         const hideFirst = Math.random() < 0.5;
         const promptHTML = hideFirst
-          ? `Find the missing number (type what goes in the box): <span class="math">\\square <span class="math-thin"> x </span> ${b} = ${product}</span>.`
-          : `Find the missing number (type what goes in the box): <span class="math">${a} <span class="math-thin"> x </span> \\square = ${product}</span>.`;
+          ? `Find the missing number (type what goes in the box): <span class="math">\\square <span class="math-thin"> *  </span> ${b} = ${product}</span>.`
+          : `Find the missing number (type what goes in the box): <span class="math">${a} <span class="math-thin"> * </span> \\square = ${product}</span>.`;
         const ans = hideFirst ? a : b;
         return {
           typeLabel: "Times Table",
@@ -734,7 +741,9 @@
           typeLabel: "Prime Factors",
           promptHTML,
           hintHTML: `Try small primes first: 2, 3, 5, 7...`,
-          explanationHTML: `The smallest prime factor of ${n} is <span class="math">${ans}</span>.`,
+          explanationHTML: ans === n
+            ? `${n} is prime, so its smallest prime factor is <span class="math">${ans}</span>.`
+            : `Check the prime numbers in order. The first one that divides ${n} evenly is <span class="math">${ans}</span>.`,
           validate: (input) => {
             const v = parseNumberLoose(input);
             return v !== null && v === ans;
@@ -874,6 +883,13 @@
   const formatScore = (score) => {
     const rounded = Math.round(score * 10) / 10;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  };
+
+  const updateScoreMeta = () => {
+    if (!els.scoreMeta) return;
+    els.scoreMeta.textContent = state.hinted
+      ? "Hint used: this question is now worth 0.5 points."
+      : "Each question is worth 1 point.";
   };
 
   const showFeedback = (kind, text) => {
@@ -1049,9 +1065,11 @@
     els.problemPrompt.innerHTML = q.promptHTML;
     els.explanation.innerHTML = "";
     els.answerInput.value = "";
+    els.hintBtn.textContent = "Hint (-0.5 pt)";
     state.currentQuestion = q;
     state.checked = false;
     state.hinted = false;
+    updateScoreMeta();
     setTags(q);
     clearBurst();
     applyCardEffect(null);
@@ -1126,7 +1144,10 @@
       const pointsAwarded = state.hinted ? 0.5 : 1;
       state.score += pointsAwarded;
       state.streak += 1;
-      showFeedback("good", `Correct! <span class="math">+${pointsAwarded}</span>`);
+      showFeedback(
+        "good",
+        `Correct! <span class="math">+${pointsAwarded}</span>${state.hinted ? " <span style=\"opacity:.9;\">(hint used)</span>" : ""}`,
+      );
       els.explanation.innerHTML = q.explanationHTML;
       renderMathIfPossible(els.explanation);
       // Card juice + confetti
@@ -1195,9 +1216,11 @@
     if (!state.currentQuestion) return;
     if (state.hinted) return;
     state.hinted = true;
-    showFeedback("neutral", "Hint unlocked.");
+    updateScoreMeta();
+    showFeedback("neutral", "Hint unlocked. This answer is now worth 0.5 points.");
     els.explanation.innerHTML = qWrap(state.currentQuestion.hintHTML);
     els.hintBtn.disabled = true;
+    els.hintBtn.textContent = "Hint used (0.5 pt)";
     renderMathIfPossible(els.explanation);
     const theme = CARD_THEMES[state.currentQuestion.typeId] || CARD_THEMES.default;
     spawnConfetti({
@@ -1276,6 +1299,7 @@
     els.achievements.innerHTML = "";
 
     els.scoreValue.textContent = "0";
+    updateScoreMeta();
     els.streakValue.textContent = "0";
     resetFeedbackUI();
 
@@ -1314,6 +1338,7 @@
 
     if (els.achievements) els.achievements.innerHTML = "";
     if (els.scoreValue) els.scoreValue.textContent = "0";
+    updateScoreMeta();
     if (els.streakValue) els.streakValue.textContent = "0";
     resetFeedbackUI();
 
