@@ -1,0 +1,20 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="burst" x1="104" y1="94" x2="520" y2="396" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2DE2E6"/>
+      <stop offset="0.5" stop-color="#FF4F9F"/>
+      <stop offset="1" stop-color="#FF9E3D"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="480" rx="36" fill="#140B27"/>
+  <circle cx="320" cy="240" r="124" fill="url(#burst)" opacity="0.22"/>
+  <path d="M320 74L346 170L430 114L384 204L490 214L396 256L470 330L372 306L374 406L320 330L266 406L268 306L170 330L244 256L150 214L256 204L210 114L294 170L320 74Z" fill="url(#burst)"/>
+  <circle cx="320" cy="240" r="74" fill="#1B1233" stroke="#F8FBFF" stroke-opacity="0.24" stroke-width="4"/>
+  <path d="M287 240H353" stroke="#2DE2E6" stroke-width="14" stroke-linecap="round"/>
+  <path d="M320 207V273" stroke="#2DE2E6" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="219" cy="134" r="18" fill="#FFCF5A"/>
+  <circle cx="421" cy="134" r="18" fill="#FF5D8F"/>
+  <circle cx="422" cy="348" r="18" fill="#2DE2E6"/>
+  <circle cx="218" cy="348" r="18" fill="#FF9E3D"/>
+  <text x="88" y="438" font-size="54" font-family="Fredoka, Arial, sans-serif" fill="#F8FBFF" opacity="0.92">Solve. Shine. Repeat.</text>
+</svg>
