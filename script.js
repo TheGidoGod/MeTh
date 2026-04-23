@@ -384,7 +384,7 @@
     powers: { glyph: "x²", label: "BOOST", a: "#A983FF", b: "#FF4F9F" },
     sqrtPerfect: { glyph: "√", label: "ROOT", a: "#7CFF9B", b: "#A983FF" },
     mod: { glyph: "%", label: "REM", a: "#FFD166", b: "#FF8C42" },
-    gcdLcm: { glyph: "GCD", label: "MATCH", a: "#2DE2E6", b: "#A983FF" },
+    hcfLcm: { glyph: "HCF", label: "MATCH", a: "#2DE2E6", b: "#A983FF" },
     primeYesNo: { glyph: "2 3 5", label: "PRIME", a: "#FF4F9F", b: "#FFD166" },
     factorCount: { glyph: "12", label: "FACTORS", a: "#7CFF9B", b: "#2DE2E6" },
     simplifyFraction: { glyph: "3/4", label: "REDUCE", a: "#2DE2E6", b: "#FF8C42" },
@@ -621,7 +621,7 @@
     }
   };
 
-  const gcd = (a, b) => {
+  const hcf = (a, b) => {
     a = Math.abs(a);
     b = Math.abs(b);
     while (b !== 0) {
@@ -633,7 +633,7 @@
   };
   const lcm = (a, b) => {
     if (a === 0 || b === 0) return 0;
-    return Math.abs((a / gcd(a, b)) * b);
+    return Math.abs((a / hcf(a, b)) * b);
   };
 
   const isPrime = (n) => {
@@ -666,7 +666,7 @@
     const sign = d < 0 ? -1 : 1;
     n *= sign;
     d *= sign;
-    const g = gcd(n, d);
+    const g = hcf(n, d);
     return { n: n / g, d: d / g };
   };
 
@@ -720,8 +720,8 @@
         sqrtK: [2, 15],
         modA: [0, 80],
         modB: [2, 12],
-        gcdA: [10, 60],
-        gcdB: [8, 55],
+        hcfA: [10, 60],
+        hcfB: [8, 55],
         primeN: [2, 60],
         factorsN: [6, 96],
         fracA: [2, 10],
@@ -751,8 +751,8 @@
         sqrtK: [3, 25],
         modA: [0, 180],
         modB: [2, 20],
-        gcdA: [20, 120],
-        gcdB: [10, 90],
+        hcfA: [20, 120],
+        hcfB: [10, 90],
         primeN: [2, 150],
         factorsN: [8, 180],
         fracA: [2, 18],
@@ -782,8 +782,8 @@
         sqrtK: [6, 40],
         modA: [0, 500],
         modB: [2, 30],
-        gcdA: [40, 240],
-        gcdB: [20, 210],
+        hcfA: [40, 240],
+        hcfB: [20, 210],
         primeN: [2, 300],
         factorsN: [18, 360],
         fracA: [3, 24],
@@ -939,21 +939,21 @@
       },
     },
     {
-      id: "gcdLcm",
-      title: "GCD vs LCM Arena",
+      id: "hcfLcm",
+      title: "HCF vs LCM Arena",
       generate: (diffKey) => {
         const r = DIFFICULTY[diffKey].ranges;
-        const a = randInt(r.gcdA[0], r.gcdA[1]);
-        const b = randInt(r.gcdB[0], r.gcdB[1]);
+        const a = randInt(r.hcfA[0], r.hcfA[1]);
+        const b = randInt(r.hcfB[0], r.hcfB[1]);
         const askGcd = Math.random() < 0.5;
-        const ans = askGcd ? gcd(a, b) : lcm(a, b);
-        const label = askGcd ? "GCD" : "LCM";
+        const ans = askGcd ? hcf(a, b) : lcm(a, b);
+        const label = askGcd ? "HCF" : "LCM";
         const promptHTML = `Find the <span class="math">${label}(${a}, ${b})</span>.`;
         const hintHTML = askGcd
-          ? `GCD is the biggest number that divides both <span class="math">${a}</span> and <span class="math">${b}</span>.`
+          ? `HCF is the biggest number that divides both <span class="math">${a}</span> and <span class="math">${b}</span>.`
           : `LCM is the smallest common multiple of <span class="math">${a}</span> and <span class="math">${b}</span>.`;
         const explanationHTML = askGcd
-          ? `The GCD of ${a} and ${b} is <span class="math">${ans}</span>.`
+          ? `The HCF of ${a} and ${b} is <span class="math">${ans}</span>.`
           : `The LCM of ${a} and ${b} is <span class="math">${ans}</span>.`;
         return {
           typeLabel: label,
@@ -1035,8 +1035,8 @@
           attempts += 1;
         }
         const promptHTML = `Simplify <span class="math">${numerator}/${denominator}</span>. Type your answer as <span class="math">p/q</span>.`;
-        const hintHTML = `Reduce by dividing numerator and denominator by their GCD (common factor).`;
-        const explanationHTML = `gcd(${numerator}, ${denominator}) reduces the fraction to <span class="math">${reduced.n}/${reduced.d}</span>.`;
+        const hintHTML = `Reduce by dividing numerator and denominator by their HCF (common factor).`;
+        const explanationHTML = `hcf(${numerator}, ${denominator}) reduces the fraction to <span class="math">${reduced.n}/${reduced.d}</span>.`;
         return {
           typeLabel: "Fraction Simplify",
           promptHTML,
@@ -1656,7 +1656,7 @@
         return questions;
       }
     },
-    gcdLcm: {
+    hcfLcm: {
       generate: () => {
         const questions = [];
         const pairs = [
@@ -1666,10 +1666,10 @@
         ];
         pairs.forEach(([a, b], idx) => {
           const askGcd = idx % 2 === 0;
-          const g = gcd(a, b);
+          const g = hcf(a, b);
           const l = lcm(a, b);
           const ans = askGcd ? g : l;
-          const label = askGcd ? "GCD" : "LCM";
+          const label = askGcd ? "HCF" : "LCM";
           questions.push({
             promptHTML: `Find <span class="math">${label}(${a}, ${b})</span>.`,
             hintHTML: askGcd 
@@ -1731,7 +1731,7 @@
             const r = reduceFraction(num, den);
             questions.push({
               promptHTML: `Simplify <span class="math">${num}/${den}</span>.`,
-              hintHTML: `Divide both by their GCD.`,
+              hintHTML: `Divide both by their HCF.`,
               explanationHTML: `<span class="math">${num}/${den} = ${r.n}/${r.d}</span>.`,
               validate: (input) => {
                 const f = parseFractionInput(input);
@@ -2998,7 +2998,7 @@
 
     setControls("pre");
 
-    // Close modal if open.
+    // Close modal if open.                                                                                                                                                                                                                                       
     if (els.endModal) {
       els.endModal.hidden = true;
       els.endModal.setAttribute("aria-hidden", "true");
