@@ -569,21 +569,14 @@
   };
 
   const setupModeSelectionButtons = () => {
-    console.log("Setting up mode selection buttons");
-    
-    // Direct DOM query for buttons
     const buttons = document.querySelectorAll(".modeSelectBtn");
-    console.log("Found mode select buttons:", buttons.length);
     
-    buttons.forEach((btn, index) => {
-      console.log(`Attaching listener to button ${index}:`, btn.dataset.mode, btn.textContent);
+    buttons.forEach((btn) => {
       btn.addEventListener("click", function(e) {
         e.preventDefault();
         e.stopPropagation();
         const mode = this.dataset.mode;
-        console.log("Mode button clicked! Mode selected:", mode);
         window.selectedGameMode = mode;
-        console.log("Set window.selectedGameMode to:", window.selectedGameMode);
         
         // Update the selector display
         const wrapper = document.getElementById("homeModeSelector");
@@ -600,24 +593,18 @@
             });
           }
         }
-        
-        console.log("Calling hideModeSelectionScreen");
+
         hideModeSelectionScreen();
       });
     });
     
-    // Setup change mode button - direct DOM query
     const changeBtn = document.getElementById("modeChangeBtn");
     if (changeBtn) {
-      console.log("Attaching listener to change mode button");
       changeBtn.addEventListener("click", function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log("Change mode button clicked");
         showModeSelectionScreen();
       });
-    } else {
-      console.log("Change mode button not found");
     }
   };
 
@@ -2087,6 +2074,7 @@
     topicId: "",
     score: 0,
     streak: 0,
+    bestStreak: 0,
     checked: false,
     hinted: false,
     questionIndex: 0,
@@ -2305,7 +2293,6 @@
         const params = new URLSearchParams();
         params.set("difficulty", select.value);
         const modeToPass = window.selectedGameMode || "arcade";
-        console.log(`Playing ${t.id} with mode:`, modeToPass);
         params.set("mode", modeToPass);
         window.location.href = `${t.id}.html?${params.toString()}`;
       });
@@ -2349,6 +2336,24 @@
       seen.add(signature);
       return true;
     });
+  };
+
+  const getSequentialDifficultySlice = (questions, difficultyKey = "easy") => {
+    const list = Array.isArray(questions) ? questions : [];
+    if (list.length <= 3) return list;
+
+    const third = Math.max(1, Math.floor(list.length / 3));
+    const middleStart = Math.max(0, Math.floor((list.length - third) / 2));
+
+    if (difficultyKey === "hard") {
+      return list.slice(Math.max(0, list.length - third));
+    }
+
+    if (difficultyKey === "medium") {
+      return list.slice(middleStart, Math.min(list.length, middleStart + third));
+    }
+
+    return list.slice(0, third);
   };
 
   const pickNextQuestion = () => {
@@ -2399,8 +2404,10 @@
       return;
     }
     if (state.gameMode === "sequential" || state.gameMode === "sequential-arcade" || state.gameMode === "sequential-speed") {
-      els.progressValue.textContent = `${state.sequenceIndex} / ${state.totalQuestions}`;
-      const pct = state.totalQuestions === 0 ? 0 : (state.sequenceIndex / state.totalQuestions) * 100;
+      const currentStep = state.currentQuestion ? state.sequenceIndex + 1 : state.sequenceIndex;
+      const boundedStep = Math.min(currentStep, state.totalQuestions);
+      els.progressValue.textContent = `${boundedStep} / ${state.totalQuestions}`;
+      const pct = state.totalQuestions === 0 ? 0 : (boundedStep / state.totalQuestions) * 100;
       els.progressBar.style.width = `${clamp(pct, 0, 100)}%`;
       return;
     }
@@ -2409,8 +2416,10 @@
       els.progressBar.style.width = "0%";
       return;
     }
-    els.progressValue.textContent = `${Math.min(state.questionIndex, state.totalQuestions)} / ${state.totalQuestions}`;
-    const pct = state.totalQuestions === 0 ? 0 : (state.questionIndex / state.totalQuestions) * 100;
+    const currentQuestionNumber = state.currentQuestion ? state.questionIndex + 1 : state.questionIndex;
+    const boundedQuestionNumber = Math.min(currentQuestionNumber, state.totalQuestions);
+    els.progressValue.textContent = `${boundedQuestionNumber} / ${state.totalQuestions}`;
+    const pct = state.totalQuestions === 0 ? 0 : (boundedQuestionNumber / state.totalQuestions) * 100;
     els.progressBar.style.width = `${clamp(pct, 0, 100)}%`;
   };
 
@@ -2531,7 +2540,12 @@
   const HIGH_SCORES_KEY = "mathArcade_highScores_v1";
   
   const parseHighScoresCSV = () => {
-    const stored = localStorage.getItem(HIGH_SCORES_KEY);
+    let stored = "";
+    try {
+      stored = window.localStorage?.getItem(HIGH_SCORES_KEY) || "";
+    } catch {
+      return [];
+    }
     if (!stored) return [];
     
     return stored
@@ -2540,7 +2554,14 @@
       .map(line => {
         const [game, difficulty, mode, score, date] = line.split(",");
         return { game, difficulty, mode, score: parseFloat(score), date };
-      });
+      })
+      .filter(entry =>
+        entry.game &&
+        entry.difficulty &&
+        entry.mode &&
+        Number.isFinite(entry.score) &&
+        entry.date
+      );
   };
   
   const saveHighScore = (game, difficulty, mode, score, date = new Date().toISOString().split("T")[0]) => {
@@ -2573,7 +2594,11 @@
     
     // Save to localStorage
     const csv = ["game,difficulty,mode,score,date", ...scores.map(s => `${s.game},${s.difficulty},${s.mode},${s.score},${s.date}`)].join("\n");
-    localStorage.setItem(HIGH_SCORES_KEY, csv);
+    try {
+      window.localStorage?.setItem(HIGH_SCORES_KEY, csv);
+    } catch {
+      return null;
+    }
     
     return scores[existingIdx >= 0 ? existingIdx : scores.length - 1];
   };
@@ -2619,19 +2644,19 @@
       els.statsBody.innerHTML = scores
         .sort((a, b) => {
           if (b.score !== a.score) return b.score - a.score;
-          return String(a.date).localeCompare(String(b.date));
+          return String(b.date).localeCompare(String(a.date));
         })
         .map((entry) => {
           const topicTitle = TOPIC_MAP[entry.game]?.title || entry.game;
           const topicLabel = state.topicId ? "" : `<div><b>Topic:</b> ${topicTitle}</div>`;
           const difficultyLabel = DIFFICULTY[entry.difficulty]?.label || entry.difficulty;
           return `
-            <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08);">
+            <div class="statEntry">
               ${topicLabel}
               <div><b>Mode:</b> ${formatModeLabel(entry.mode)}</div>
               <div><b>Difficulty:</b> ${difficultyLabel}</div>
               <div><b>High score:</b> ${formatScore(entry.score)}</div>
-              <div style="opacity:0.75;"><b>Set on:</b> ${entry.date}</div>
+              <div class="statEntryDate"><b>Set on:</b> ${entry.date}</div>
             </div>
           `;
         })
@@ -2671,18 +2696,18 @@
     if (result) {
       const isNewHigh = !prevHighScore || displayScore > prevHighScore;
       if (isNewHigh) {
-        highScoreHTML = `<div style="margin-top:12px; padding:8px; background:rgba(126,255,155,0.15); border-radius:6px; border-left:3px solid #7EFF9B;"><b>🏆 New High Score!</b></div>`;
+        highScoreHTML = `<div class="highScoreNew"><b>🏆 New High Score!</b></div>`;
       } else if (prevHighScore) {
-        highScoreHTML = `<div style="margin-top:12px; opacity:0.8;"><b>High Score:</b> ${formatScore(prevHighScore)}</div>`;
+        highScoreHTML = `<div class="highScorePrev"><b>High Score:</b> ${formatScore(prevHighScore)}</div>`;
       }
     }
     
     els.endTitle.textContent = title;
     els.endBody.innerHTML = `
       <div><b>Score:</b> ${scoreText}</div>
-      <div style="margin-top:6px;"><b>Best streak:</b> ${Math.max(state.streak, 0)}</div>
+      <div style="margin-top:6px;"><b>Best streak:</b> ${Math.max(state.bestStreak, state.streak, 0)}</div>
       ${highScoreHTML}
-      <div style="margin-top:6px; color: rgba(234,240,255,.78);">${reason ? reason : ""} </div>
+      <div class="endReason">${reason ? reason : ""} </div>
     `;
 
     state.currentQuestion = null;
@@ -2731,6 +2756,7 @@
       const pointsAwarded = state.hinted ? 0.5 : 1;
       state.score += pointsAwarded;
       state.streak += 1;
+      state.bestStreak = Math.max(state.bestStreak, state.streak);
       showFeedback(
         "good",
         `Correct! <span class="math">+${pointsAwarded}</span>${state.hinted ? " <span style=\"opacity:.9;\">(hint used)</span>" : ""}`,
@@ -2823,11 +2849,9 @@
   };
 
   // Wrap hint so we can keep a consistent look.
-  const qWrap = (html) => `<div style="color: rgba(234,240,255,.92); font-weight:800;">Hint:</div><div style="margin-top:6px;">${html}</div>`;
+  const qWrap = (html) => `<div class="hintLabel">Hint:</div><div style="margin-top:6px;">${html}</div>`;
 
   const startQuiz = (topicId, difficultyKey = "easy", gameMode = "arcade", timeLimit = 60) => {
-    console.log(`startQuiz called with topicId=${topicId}, difficultyKey=${difficultyKey}, gameMode=${gameMode}, timeLimit=${timeLimit}`);
-    
     if (topicId) state.topicId = topicId;
     if (difficultyKey) state.difficultyKey = difficultyKey;
     state.gameMode = gameMode;
@@ -2846,14 +2870,11 @@
     // Initialize sequential challenge for all sequential variants
     if (isSequentialVariant) {
       const sequenceGen = SEQUENCES[topicId];
-      console.log(`Looking for sequences for topic: "${topicId}"`);
-      console.log(`Available sequences: ${Object.keys(SEQUENCES).join(", ")}`);
-      console.log(`Found sequenceGen:`, sequenceGen);
       
       if (sequenceGen && typeof sequenceGen.generate === "function") {
-        state.sequenceQuestions = dedupeQuestions(sequenceGen.generate(), topicId);
+        const fullSequence = dedupeQuestions(sequenceGen.generate(), topicId);
+        state.sequenceQuestions = getSequentialDifficultySlice(fullSequence, state.difficultyKey);
         state.sequenceIndex = 0;
-        console.log(`Generated ${state.sequenceQuestions.length} sequential questions`);
         
         // Set totalQuestions based on sequential type
         if (gameMode === "sequential") {
@@ -2871,7 +2892,6 @@
         }
       } else {
         // Fallback: if no sequence for this topic, use arcade mode
-        console.log(`NO sequence found for topic "${topicId}", falling back to arcade`);
         state.gameMode = "arcade";
         state.mode = "arcade";
         state.totalQuestions = 10;
@@ -2885,7 +2905,7 @@
     }
 
     // Generate unique questions for arcade mode
-    if (gameMode === "arcade") {
+    if (state.gameMode === "arcade") {
       const type = TOPIC_MAP[state.topicId] || pick(PROBLEM_TYPES);
       const questions = [];
       const seen = new Set();
@@ -2918,6 +2938,7 @@
 
     state.score = 0;
     state.streak = 0;
+    state.bestStreak = 0;
     state.checked = false;
     state.hinted = false;
     state.questionIndex = 0;
@@ -2971,6 +2992,7 @@
 
     state.score = 0;
     state.streak = 0;
+    state.bestStreak = 0;
     state.checked = false;
     state.hinted = false;
     state.questionIndex = 0;
@@ -3021,8 +3043,6 @@
       els.topicPageArt.alt = `${topic.title} illustration`;
     }
     if (els.pageSubtitle) {
-      const difficultyLabel = DIFFICULTY[state.difficultyKey]?.label || DIFFICULTY.easy.label;
-      
       // Update mode indicator
       const modeIndicator = document.getElementById("modeIndicator");
       if (modeIndicator) {
@@ -3076,8 +3096,6 @@
     const initialDifficulty = DIFFICULTY[requestedDifficulty] ? requestedDifficulty : "easy";
     const gameMode = params.get("mode") || "arcade";
     const timeLimit = params.get("time") ? parseInt(params.get("time")) : 60;
-    
-    console.log(`Initializing topic page ${pageTopicId} with mode:`, gameMode);
     
     state.topicId = pageTopicId;
     state.difficultyKey = initialDifficulty;
