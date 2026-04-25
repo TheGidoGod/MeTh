@@ -2721,7 +2721,10 @@
     clearAutoAdvance();
     if (state.gameMode === "sequential" || state.gameMode === "sequential-arcade" || state.gameMode === "sequential-speed") {
       state.sequenceIndex += 1;
-      if (state.sequenceIndex >= state.sequenceQuestions.length) {
+      const sequentialLimit = state.gameMode === "sequential-arcade"
+        ? Math.min(state.totalQuestions, state.sequenceQuestions.length)
+        : state.sequenceQuestions.length;
+      if (state.sequenceIndex >= sequentialLimit) {
         finishRun("Sequence complete! 🎉");
         return;
       }
@@ -2881,8 +2884,8 @@
           // Base Sequential Challenge should show the full sequence length.
           state.totalQuestions = state.sequenceQuestions.length;
         } else if (sequentialType === "arcade") {
-          // Sequential Arcade stays capped as a shorter run.
-          state.totalQuestions = Math.min(10, state.sequenceQuestions.length);
+          // Sequential Arcade is a fixed 30-question run.
+          state.totalQuestions = Math.min(30, state.sequenceQuestions.length);
         } else if (sequentialType === "speed") {
           // Sequential Speed = all questions (limited by timer)
           state.totalQuestions = state.sequenceQuestions.length;
