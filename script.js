@@ -14,6 +14,10 @@
     els.topicScreen = $("#topicScreen");
     els.quizScreen = $("#quizScreen");
     els.topicGrid = $("#topicGrid");
+    els.topicPagination = $("#topicPagination");
+    els.topicPrevBtn = $("#topicPrevBtn");
+    els.topicNextBtn = $("#topicNextBtn");
+    els.topicPageStatus = $("#topicPageStatus");
     els.topicBar = $("#topicBar");
     els.topicFooter = $("#topicFooter");
     els.modeSelectionScreen = $("#modeSelectionScreen");
@@ -554,6 +558,7 @@
       els.modeSelectionScreen.style.display = "flex";
       if (els.topicBar) els.topicBar.style.display = "none";
       if (els.topicGrid) els.topicGrid.style.display = "none";
+      if (els.topicPagination) els.topicPagination.style.display = "none";
       if (els.topicFooter) els.topicFooter.style.display = "none";
     }
   };
@@ -564,6 +569,7 @@
       els.modeSelectionScreen.style.display = "none";
       if (els.topicBar) els.topicBar.style.display = "flex";
       if (els.topicGrid) els.topicGrid.style.display = "grid";
+      if (els.topicPagination) els.topicPagination.style.display = "flex";
       if (els.topicFooter) els.topicFooter.style.display = "block";
     }
   };
@@ -2092,7 +2098,10 @@
     seenQuestionSignatures: new Set(),
     arcadeQuestions: [],
     arcadeIndex: 0,
+    topicListPage: 0,
   };
+
+  const TOPICS_PER_PAGE = 9;
 
   const CARD_THEMES = {
     addsub: {
@@ -2255,7 +2264,12 @@
   const renderTopicGrid = () => {
     if (!els.topicGrid) return;
     els.topicGrid.innerHTML = "";
-    PROBLEM_TYPES.forEach((t) => {
+    const totalPages = Math.max(1, Math.ceil(PROBLEM_TYPES.length / TOPICS_PER_PAGE));
+    state.topicListPage = clamp(state.topicListPage, 0, totalPages - 1);
+    const startIndex = state.topicListPage * TOPICS_PER_PAGE;
+    const visibleTopics = PROBLEM_TYPES.slice(startIndex, startIndex + TOPICS_PER_PAGE);
+
+    visibleTopics.forEach((t) => {
       const tile = document.createElement("div");
       tile.className = "topicTile";
 
@@ -2304,6 +2318,14 @@
       tile.appendChild(play);
       els.topicGrid.appendChild(tile);
     });
+
+    if (els.topicPagination && els.topicPageStatus && els.topicPrevBtn && els.topicNextBtn) {
+      const shouldShowPagination = totalPages > 1;
+      els.topicPagination.style.display = shouldShowPagination && els.modeSelectionScreen?.style.display !== "flex" ? "flex" : "none";
+      els.topicPageStatus.textContent = `Page ${state.topicListPage + 1} of ${totalPages}`;
+      els.topicPrevBtn.disabled = state.topicListPage === 0;
+      els.topicNextBtn.disabled = state.topicListPage >= totalPages - 1;
+    }
   };
 
   const getQuestionSignature = (q) => {
@@ -3004,6 +3026,7 @@
     state.seenQuestionSignatures = new Set();
     state.arcadeQuestions = [];
     state.arcadeIndex = 0;
+    state.topicListPage = 0;
 
     if (els.achievements) els.achievements.innerHTML = "";
     if (els.scoreValue) els.scoreValue.textContent = "0";
@@ -3123,6 +3146,19 @@
   };
 
   // --- Events ---
+  if (els.topicPrevBtn) {
+    els.topicPrevBtn.addEventListener("click", () => {
+      state.topicListPage = Math.max(0, state.topicListPage - 1);
+      renderTopicGrid();
+    });
+  }
+  if (els.topicNextBtn) {
+    els.topicNextBtn.addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(PROBLEM_TYPES.length / TOPICS_PER_PAGE));
+      state.topicListPage = Math.min(totalPages - 1, state.topicListPage + 1);
+      renderTopicGrid();
+    });
+  }
   els.skipBtn.addEventListener("click", () => onSkip());
   els.hintBtn.addEventListener("click", () => onHint());
   els.newProblemBtn.addEventListener("click", () => {
