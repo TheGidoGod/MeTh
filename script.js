@@ -513,6 +513,7 @@
     Math.floor(Math.random() * (max - min + 1)) + min;
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+  const modeUsesSequential = (mode) => typeof mode === "string" && mode.startsWith("sequential");
 
   const setupHomeModeSelector = () => {
     const wrapper = document.getElementById("homeModeSelector");
@@ -538,6 +539,7 @@
         wrapper.classList.remove("open");
         // Store selected mode globally
         window.selectedGameMode = option.dataset.value;
+        renderTopicGrid();
       });
     });
     
@@ -600,6 +602,7 @@
           }
         }
 
+        renderTopicGrid();
         hideModeSelectionScreen();
       });
     });
@@ -1513,6 +1516,15 @@
     },
   ];
   const TOPIC_MAP = Object.fromEntries(PROBLEM_TYPES.map((type) => [type.id, type]));
+  const SEQUENTIAL_DISABLED_TOPICS = new Set(["multiply", "addsub", "exactDiv", "sqrtPerfect"]);
+
+  const topicSupportsMode = (topicId, mode) => {
+    if (!modeUsesSequential(mode)) return true;
+    return !SEQUENTIAL_DISABLED_TOPICS.has(topicId);
+  };
+
+  const getTopicCatalogForMode = (mode) =>
+    PROBLEM_TYPES.filter((topic) => topicSupportsMode(topic.id, mode));
 
   // --- Sequential Challenge Sequences ---
   const SEQUENCES = {
@@ -2093,12 +2105,16 @@
     gameMode: "arcade",
     timeLimit: 60,
     autoAdvanceTimerId: null,
+    popupTimerId: null,
     sequenceQuestions: [],
     sequenceIndex: 0,
     seenQuestionSignatures: new Set(),
     arcadeQuestions: [],
     arcadeIndex: 0,
     topicListPage: 0,
+    correctAnswers: 0,
+    speedMilestone: null,
+    speedMilestoneHit: false,
   };
 
   const TOPICS_PER_PAGE = 9;
@@ -2154,6 +2170,113 @@
   const clearBurst = () => {
     const layer = ensureBurstLayer();
     layer.innerHTML = "";
+  };
+
+  const clearMilestonePopupTimer = () => {
+    if (state.popupTimerId) clearTimeout(state.popupTimerId);
+    state.popupTimerId = null;
+  };
+
+  const ensureSpeedMilestonePopup = () => {
+    let popup = document.getElementById("speedMilestonePopup");
+    if (popup) return popup;
+
+    popup = document.createElement("div");
+    popup.id = "speedMilestonePopup";
+    popup.className = "speedMilestonePopup";
+    popup.hidden = true;
+    popup.setAttribute("aria-hidden", "true");
+    popup.innerHTML = `
+      <div class="speedMilestonePopup__card" role="status" aria-live="polite">
+        <button class="speedMilestonePopup__close" id="speedMilestoneCloseBtn" type="button" aria-label="Close popup">×</button>
+        <div class="speedMilestonePopup__eyebrow">Speed Surprise</div>
+        <div class="speedMilestonePopup__title" id="speedMilestoneTitle">Milestone reached!</div>
+        <div class="speedMilestonePopup__body" id="speedMilestoneBody"></div>
+      </div>
+    `;
+    document.body.appendChild(popup);
+
+    const closeBtn = popup.querySelector("#speedMilestoneCloseBtn");
+    closeBtn?.addEventListener("click", () => {
+      clearMilestonePopupTimer();
+      popup.hidden = true;
+      popup.setAttribute("aria-hidden", "true");
+    });
+
+    return popup;
+  };
+
+  const hideSpeedMilestonePopup = () => {
+    clearMilestonePopupTimer();
+    const popup = document.getElementById("speedMilestonePopup");
+    if (!popup) return;
+    popup.hidden = true;
+    popup.setAttribute("aria-hidden", "true");
+  };
+
+  const showSpeedMilestonePopup = (milestone) => {
+    const popup = ensureSpeedMilestonePopup();
+    const title = popup.querySelector("#speedMilestoneTitle");
+    const body = popup.querySelector("#speedMilestoneBody");
+    if (title) title.textContent = milestone.title;
+    if (body) {
+      body.innerHTML = `
+        <strong>${milestone.target}</strong> correct answers in
+        <strong>${milestone.deadlineSec}</strong> seconds.
+        <br>${milestone.message}
+      `;
+    }
+    popup.hidden = false;
+    popup.setAttribute("aria-hidden", "false");
+    clearMilestonePopupTimer();
+    state.popupTimerId = window.setTimeout(() => {
+      hideSpeedMilestonePopup();
+    }, 3000);
+  };
+
+  const buildSpeedMilestone = (mode, difficultyKey, timeLimit) => {
+    if (mode !== "speed" && mode !== "sequential-speed") return null;
+
+    const profiles = {
+      easy: mode === "speed"
+        ? { target: [11, 13], deadline: [24, 32] }
+        : { target: [10, 12], deadline: [26, 34] },
+      medium: mode === "speed"
+        ? { target: [10, 12], deadline: [20, 28] }
+        : { target: [9, 11], deadline: [22, 30] },
+      hard: mode === "speed"
+        ? { target: [9, 11], deadline: [18, 24] }
+        : { target: [8, 10], deadline: [20, 26] },
+    };
+
+    const profile = profiles[difficultyKey] || profiles.easy;
+    const deadlineMax = Math.min(timeLimit - 8, profile.deadline[1]);
+    const deadlineMin = Math.min(deadlineMax, profile.deadline[0]);
+    const messages = [
+      "That pace was ridiculous. Keep going.",
+      "You just hit a pro-level burst.",
+      "Sharp work. You earned a surprise.",
+      "That streak had serious speed-run energy.",
+    ];
+
+    return {
+      target: randInt(profile.target[0], profile.target[1]),
+      deadlineSec: randInt(deadlineMin, Math.max(deadlineMin, deadlineMax)),
+      title: pick(["Flash Milestone!", "Speed Burst!", "Combo Unlocked!", "Rapid-Fire Win!"]),
+      message: pick(messages),
+    };
+  };
+
+  const maybeTriggerSpeedMilestone = () => {
+    const milestone = state.speedMilestone;
+    if (!milestone || state.speedMilestoneHit) return;
+    if (state.gameMode !== "speed" && state.gameMode !== "sequential-speed") return;
+
+    const elapsed = state.timeLimit - state.timeLeft;
+    if (elapsed <= milestone.deadlineSec && state.correctAnswers >= milestone.target) {
+      state.speedMilestoneHit = true;
+      showSpeedMilestonePopup(milestone);
+    }
   };
 
   const spawnConfetti = (opts = {}) => {
@@ -2264,10 +2387,12 @@
   const renderTopicGrid = () => {
     if (!els.topicGrid) return;
     els.topicGrid.innerHTML = "";
-    const totalPages = Math.max(1, Math.ceil(PROBLEM_TYPES.length / TOPICS_PER_PAGE));
+    const mode = window.selectedGameMode || "arcade";
+    const topicCatalog = getTopicCatalogForMode(mode);
+    const totalPages = Math.max(1, Math.ceil(topicCatalog.length / TOPICS_PER_PAGE));
     state.topicListPage = clamp(state.topicListPage, 0, totalPages - 1);
     const startIndex = state.topicListPage * TOPICS_PER_PAGE;
-    const visibleTopics = PROBLEM_TYPES.slice(startIndex, startIndex + TOPICS_PER_PAGE);
+    const visibleTopics = topicCatalog.slice(startIndex, startIndex + TOPICS_PER_PAGE);
 
     visibleTopics.forEach((t) => {
       const tile = document.createElement("div");
@@ -2692,6 +2817,7 @@
   const finishRun = (reason) => {
     clearAutoAdvance();
     stopTimer();
+    hideSpeedMilestonePopup();
     els.timerBox.classList.remove("timer--danger");
     els.timerValue.classList.remove("timerPulse");
     state.endReason = reason;
@@ -2780,8 +2906,10 @@
     if (ok) {
       const pointsAwarded = state.hinted ? 0.5 : 1;
       state.score += pointsAwarded;
+      state.correctAnswers += 1;
       state.streak += 1;
       state.bestStreak = Math.max(state.bestStreak, state.streak);
+      maybeTriggerSpeedMilestone();
       showFeedback(
         "good",
         `Correct! <span class="math">+${pointsAwarded}</span>${state.hinted ? " <span style=\"opacity:.9;\">(hint used)</span>" : ""}`,
@@ -2877,19 +3005,21 @@
   const qWrap = (html) => `<div class="hintLabel">Hint:</div><div style="margin-top:6px;">${html}</div>`;
 
   const startQuiz = (topicId, difficultyKey = "easy", gameMode = "arcade", timeLimit = 60) => {
+    hideSpeedMilestonePopup();
     if (topicId) state.topicId = topicId;
     if (difficultyKey) state.difficultyKey = difficultyKey;
-    state.gameMode = gameMode;
+    const resolvedMode = topicSupportsMode(state.topicId, gameMode) ? gameMode : "arcade";
+    state.gameMode = resolvedMode;
     state.timeLimit = timeLimit;
     
     // Determine the base mode and whether we're using sequences
-    const isSequentialVariant = gameMode.startsWith("sequential");
-    const sequentialType = gameMode.replace("sequential", "").replace("-", "") || ""; // "arcade", "speed", or ""
+    const isSequentialVariant = resolvedMode.startsWith("sequential");
+    const sequentialType = resolvedMode.replace("sequential", "").replace("-", "") || ""; // "arcade", "speed", or ""
     
     if (isSequentialVariant) {
       state.mode = "sequential";
     } else {
-      state.mode = gameMode === "speed" ? "speed" : "arcade";
+      state.mode = resolvedMode === "speed" ? "speed" : "arcade";
     }
     
     // Initialize sequential challenge for all sequential variants
@@ -2902,7 +3032,7 @@
         state.sequenceIndex = 0;
         
         // Set totalQuestions based on sequential type
-        if (gameMode === "sequential") {
+        if (resolvedMode === "sequential") {
           // Base Sequential Challenge should show the full sequence length.
           state.totalQuestions = state.sequenceQuestions.length;
         } else if (sequentialType === "arcade") {
@@ -2921,7 +3051,7 @@
         state.mode = "arcade";
         state.totalQuestions = 10;
       }
-    } else if (gameMode === "speed") {
+    } else if (resolvedMode === "speed") {
       state.totalQuestions = 9999; // Essentially unlimited - will end when timer expires
       state.timeLeft = timeLimit;
     } else {
@@ -2967,6 +3097,9 @@
     state.checked = false;
     state.hinted = false;
     state.questionIndex = 0;
+    state.correctAnswers = 0;
+    state.speedMilestone = buildSpeedMilestone(state.gameMode, state.difficultyKey, state.timeLimit);
+    state.speedMilestoneHit = false;
     state.achievementsSeen = new Set();
     state.seenQuestionSignatures = new Set();
     state.endReason = "";
@@ -2982,9 +3115,9 @@
     els.timerValue.classList.remove("timerPulse");
     
     // Show timer for speed modes only
-    if (gameMode === "speed") {
+    if (resolvedMode === "speed") {
       els.timerValue.textContent = timeToMMSS(state.timeLeft);
-    } else if (gameMode === "sequential-speed") {
+    } else if (resolvedMode === "sequential-speed") {
       els.timerValue.textContent = timeToMMSS(state.timeLimit);
       state.timeLeft = state.timeLimit;
     } else {
@@ -2992,7 +3125,7 @@
     }
 
     els.progressBar.style.width = "0%";
-    const isSpeed = gameMode === "speed" || gameMode === "sequential-speed";
+    const isSpeed = resolvedMode === "speed" || resolvedMode === "sequential-speed";
     els.progressValue.textContent = isSpeed ? "0" : `0 / ${state.totalQuestions}`;
 
     clearBurst();
@@ -3010,6 +3143,7 @@
   const resetAll = () => {
     clearAutoAdvance();
     stopTimer();
+    hideSpeedMilestonePopup();
     els.timerBox.classList.remove("timer--danger");
     els.timerValue.classList.remove("timerPulse");
     clearBurst();
@@ -3021,6 +3155,9 @@
     state.checked = false;
     state.hinted = false;
     state.questionIndex = 0;
+    state.correctAnswers = 0;
+    state.speedMilestone = null;
+    state.speedMilestoneHit = false;
     state.currentQuestion = null;
     state.achievementsSeen = new Set();
     state.seenQuestionSignatures = new Set();
