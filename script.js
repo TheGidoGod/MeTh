@@ -2085,6 +2085,10 @@
     },
   };
 
+  for (const topicId of SEQUENTIAL_DISABLED_TOPICS) {
+    delete SEQUENCES[topicId];
+  }
+
   // --- UI / Game state ---
   const state = {
     mode: "arcade",
@@ -2113,11 +2117,11 @@
     arcadeIndex: 0,
     topicListPage: 0,
     correctAnswers: 0,
-    speedMilestone: null,
-    speedMilestoneHit: false,
+    speedMilestonesReached: new Set(),
   };
 
   const TOPICS_PER_PAGE = 9;
+  const SPEED_MILESTONE_COUNTS = [5, 10, 20, 25, 30, 45, 50, 65, 70, 75];
 
   const CARD_THEMES = {
     addsub: {
@@ -2221,8 +2225,7 @@
     if (title) title.textContent = milestone.title;
     if (body) {
       body.innerHTML = `
-        <strong>${milestone.target}</strong> correct answers in
-        <strong>${milestone.deadlineSec}</strong> seconds.
+        <strong>${milestone.target}</strong> questions solved.
         <br>${milestone.message}
       `;
     }
@@ -2234,49 +2237,41 @@
     }, 3000);
   };
 
-  const buildSpeedMilestone = (mode, difficultyKey, timeLimit) => {
-    if (mode !== "speed" && mode !== "sequential-speed") return null;
-
-    const profiles = {
-      easy: mode === "speed"
-        ? { target: [11, 13], deadline: [24, 32] }
-        : { target: [10, 12], deadline: [26, 34] },
-      medium: mode === "speed"
-        ? { target: [10, 12], deadline: [20, 28] }
-        : { target: [9, 11], deadline: [22, 30] },
-      hard: mode === "speed"
-        ? { target: [9, 11], deadline: [18, 24] }
-        : { target: [8, 10], deadline: [20, 26] },
+  const buildSpeedMilestone = (target) => {
+    const titleMap = {
+      5: "Hot Start!",
+      10: "Ten Down!",
+      20: "Speed Machine!",
+      25: "Quarter-Century Run!",
+      30: "Thirty Strong!",
+      45: "Blazing Pace!",
+      50: "Fifty Solved!",
+      65: "Monster Run!",
+      70: "Seventy Smash!",
+      75: "Legend Pace!",
     };
 
-    const profile = profiles[difficultyKey] || profiles.easy;
-    const deadlineMax = Math.min(timeLimit - 8, profile.deadline[1]);
-    const deadlineMin = Math.min(deadlineMax, profile.deadline[0]);
     const messages = [
-      "That pace was ridiculous. Keep going.",
-      "You just hit a pro-level burst.",
-      "Sharp work. You earned a surprise.",
-      "That streak had serious speed-run energy.",
+      "That was a serious burst of focus.",
+      "You are flying through these now.",
+      "That rhythm looks sharp. Keep pressing.",
+      "This is the kind of streak students remember.",
     ];
 
     return {
-      target: randInt(profile.target[0], profile.target[1]),
-      deadlineSec: randInt(deadlineMin, Math.max(deadlineMin, deadlineMax)),
-      title: pick(["Flash Milestone!", "Speed Burst!", "Combo Unlocked!", "Rapid-Fire Win!"]),
+      target,
+      title: titleMap[target] || "Milestone Reached!",
       message: pick(messages),
     };
   };
 
   const maybeTriggerSpeedMilestone = () => {
-    const milestone = state.speedMilestone;
-    if (!milestone || state.speedMilestoneHit) return;
     if (state.gameMode !== "speed" && state.gameMode !== "sequential-speed") return;
+    if (!SPEED_MILESTONE_COUNTS.includes(state.correctAnswers)) return;
+    if (state.speedMilestonesReached.has(state.correctAnswers)) return;
 
-    const elapsed = state.timeLimit - state.timeLeft;
-    if (elapsed <= milestone.deadlineSec && state.correctAnswers >= milestone.target) {
-      state.speedMilestoneHit = true;
-      showSpeedMilestonePopup(milestone);
-    }
+    state.speedMilestonesReached.add(state.correctAnswers);
+    showSpeedMilestonePopup(buildSpeedMilestone(state.correctAnswers));
   };
 
   const spawnConfetti = (opts = {}) => {
@@ -3098,8 +3093,7 @@
     state.hinted = false;
     state.questionIndex = 0;
     state.correctAnswers = 0;
-    state.speedMilestone = buildSpeedMilestone(state.gameMode, state.difficultyKey, state.timeLimit);
-    state.speedMilestoneHit = false;
+    state.speedMilestonesReached = new Set();
     state.achievementsSeen = new Set();
     state.seenQuestionSignatures = new Set();
     state.endReason = "";
@@ -3156,8 +3150,7 @@
     state.hinted = false;
     state.questionIndex = 0;
     state.correctAnswers = 0;
-    state.speedMilestone = null;
-    state.speedMilestoneHit = false;
+    state.speedMilestonesReached = new Set();
     state.currentQuestion = null;
     state.achievementsSeen = new Set();
     state.seenQuestionSignatures = new Set();
