@@ -2439,6 +2439,8 @@
       els.topicGrid.appendChild(tile);
     });
 
+    customizeSelects();
+
     if (els.topicPagination && els.topicPageStatus && els.topicPrevBtn && els.topicNextBtn) {
       const shouldShowPagination = totalPages > 1;
       els.topicPagination.style.display = shouldShowPagination && els.modeSelectionScreen?.style.display !== "flex" ? "flex" : "none";
@@ -3284,7 +3286,9 @@
   }
   if (els.topicNextBtn) {
     els.topicNextBtn.addEventListener("click", () => {
-      const totalPages = Math.max(1, Math.ceil(PROBLEM_TYPES.length / TOPICS_PER_PAGE));
+      const mode = window.selectedGameMode || "arcade";
+      const topicCatalog = getTopicCatalogForMode(mode);
+      const totalPages = Math.max(1, Math.ceil(topicCatalog.length / TOPICS_PER_PAGE));
       state.topicListPage = Math.min(totalPages - 1, state.topicListPage + 1);
       renderTopicGrid();
     });
