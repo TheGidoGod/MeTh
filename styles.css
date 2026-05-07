@@ -429,49 +429,69 @@ body[data-theme="light"] .topicPageControls .custom-select-display {
 .speedMilestonePopup[hidden]{
   display:none !important;
 }
+.speedMilestonePopup{
+  animation: slideInReward 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes slideInReward{
+  from{
+    opacity: 0;
+    transform: translateX(420px) scale(0.9);
+  }
+  to{
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
 .speedMilestonePopup__card{
-  width:min(360px, calc(100vw - 24px));
-  padding:18px 18px 16px;
-  border-radius:22px;
-  border:1px solid color-mix(in srgb, var(--warn) 55%, var(--stroke));
+  width:min(420px, calc(100vw - 24px));
+  padding:24px 24px 22px;
+  border-radius:24px;
+  border:2px solid color-mix(in srgb, var(--warn) 75%, var(--a));
   background:
-    radial-gradient(220px 90px at 0% 0%, color-mix(in srgb, var(--warn) 26%, transparent), transparent 65%),
-    radial-gradient(220px 90px at 100% 0%, color-mix(in srgb, var(--a) 24%, transparent), transparent 62%),
-    linear-gradient(180deg, color-mix(in srgb, var(--panel2) 96%, transparent), color-mix(in srgb, var(--cardSolid) 94%, transparent));
-  box-shadow: 0 18px 50px rgba(0,0,0,.28);
-  backdrop-filter: blur(14px);
+    radial-gradient(280px 120px at 0% -10%, color-mix(in srgb, var(--warn) 38%, transparent), transparent 60%),
+    radial-gradient(240px 100px at 100% 10%, color-mix(in srgb, var(--a) 32%, transparent), transparent 65%),
+    linear-gradient(180deg, color-mix(in srgb, var(--panel2) 98%, transparent), color-mix(in srgb, var(--cardSolid) 96%, transparent));
+  box-shadow: 0 0 0 1px rgba(255,207,90,.15),
+              0 24px 64px rgba(0,0,0,.35),
+              0 0 32px rgba(255,207,90,.18);
+  backdrop-filter: blur(18px);
   position:relative;
 }
 .speedMilestonePopup__close{
   position:absolute;
   top:10px;
-  right:12px;
+  right:14px;
   border:0;
   background:transparent;
   color:var(--muted);
   cursor:pointer;
-  font-size:24px;
+  font-size:28px;
   line-height:1;
+  transition: color 0.2s ease;
+}
+.speedMilestonePopup__close:hover{
+  color:var(--text);
 }
 .speedMilestonePopup__eyebrow{
-  font-size:12px;
+  font-size:13px;
   font-weight:900;
-  letter-spacing:.18em;
+  letter-spacing:.2em;
   text-transform:uppercase;
   color:var(--warn);
 }
 .speedMilestonePopup__title{
-  margin-top:6px;
-  font-size:24px;
+  margin-top:8px;
+  font-size:32px;
   font-weight:1000;
   font-family:"Fredoka", ui-sans-serif, system-ui;
   color:var(--text);
+  line-height:1.2;
 }
 .speedMilestonePopup__body{
-  margin-top:8px;
+  margin-top:10px;
   color:var(--muted);
-  line-height:1.45;
-  font-size:15px;
+  line-height:1.5;
+  font-size:16px;
 }
 
 /* Prevent horizontal overflow on smaller screens */
@@ -1350,27 +1370,42 @@ select optgroup{
   50%{ transform: scale(1.03); }
 }
 .modal__card{
-  width:min(640px, calc(100vw - 24px));
+  width:min(700px, calc(100vw - 24px));
   border-radius: calc(var(--radius) + 4px);
-  border:1px solid var(--stroke2);
+  border:2px solid var(--stroke2);
   background: linear-gradient(180deg, var(--panel2), var(--panel));
-  box-shadow: var(--shadow);
-  padding:18px;
+  box-shadow: 0 0 0 1px rgba(45,226,230,.1),
+              var(--shadow),
+              0 0 40px rgba(45,226,230,.12);
+  padding:32px;
   backdrop-filter: blur(18px);
+  animation: scaleInModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes scaleInModal{
+  from{
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to{
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 .modal__title{
   font-weight:1000;
-  font-size:24px;
-  margin-bottom:10px;
+  font-size:36px;
+  margin-bottom:16px;
+  line-height:1.2;
 }
 .modal__body{
   color: var(--muted);
-  line-height:1.5;
-  padding:12px 12px;
-  border-radius:14px;
+  line-height:1.6;
+  padding:16px 16px;
+  border-radius:16px;
   border:1px solid var(--stroke);
   background: var(--ghostBg);
-  min-height:72px;
+  min-height:80px;
+  font-size:16px;
 }
 .highScoreNew{
   margin-top:12px;
@@ -1406,6 +1441,158 @@ body[data-theme="light"] .endReason {
   display:flex;
   gap:10px;
   justify-content:flex-end;
+}
+
+/* Celebration Popup - Center screen, full screen confetti */
+.celebrationPopup{
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:1300;
+}
+.celebrationPopup[hidden]{
+  display:none !important;
+}
+.celebrationPopup__backdrop{
+  position:absolute;
+  inset:0;
+  background: radial-gradient(circle at center, rgba(0,0,0,.3), rgba(0,0,0,.6));
+  backdrop-filter: blur(8px);
+  animation: backdropFade 0.3s ease-out;
+}
+@keyframes backdropFade{
+  from{ backdrop-filter: blur(0px); opacity: 0; }
+  to{ backdrop-filter: blur(8px); opacity: 1; }
+}
+.celebrationPopup__card{
+  position:relative;
+  z-index:1;
+  width:min(500px, calc(100vw - 40px));
+  padding:40px;
+  border-radius:32px;
+  border:2px solid var(--warn);
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--warn) 8%, var(--panel2)),
+    color-mix(in srgb, var(--a) 6%, var(--panel)));
+  box-shadow: 0 0 0 2px rgba(255,207,90,.2),
+              0 0 60px rgba(255,207,90,.25),
+              0 20px 80px rgba(0,0,0,.4);
+  backdrop-filter: blur(20px);
+  animation: popUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  text-align:center;
+}
+@keyframes popUp{
+  from{
+    opacity: 0;
+    transform: scale(0.5) translateY(30px);
+  }
+  to{
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.celebrationPopup--active .celebrationPopup__card{
+  animation: popUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+             cardPulse 0.6s ease-out 0.4s;
+}
+@keyframes cardPulse{
+  0%{ transform: scale(1); }
+  50%{ transform: scale(1.05); }
+  100%{ transform: scale(1); }
+}
+.celebrationPopup__close{
+  position:absolute;
+  top:12px;
+  right:16px;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:32px;
+  line-height:1;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.celebrationPopup__close:hover{
+  color:var(--text);
+  transform: rotate(90deg);
+}
+.celebrationPopup__content{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.celebrationPopup__emoji{
+  font-size:80px;
+  line-height:1;
+  animation: floatBounce 0.6s ease-out;
+}
+.celebrationPopup--score .celebrationPopup__emoji{
+  animation: floatBounce 0.6s ease-out, rotateSpin 1s ease-out;
+}
+.celebrationPopup--time .celebrationPopup__emoji{
+  animation: floatBounce 0.6s ease-out, lightningFlash 0.8s ease-out;
+}
+@keyframes floatBounce{
+  0%{ transform: translateY(-40px) scale(0.3); opacity: 0; }
+  60%{ transform: translateY(6px); }
+  100%{ transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes rotateSpin{
+  0%{ transform: rotate(0deg); }
+  100%{ transform: rotate(360deg); }
+}
+@keyframes lightningFlash{
+  0%, 100%{ opacity: 1; }
+  25%, 75%{ opacity: 0.6; }
+  50%{ opacity: 1; }
+}
+.celebrationPopup__eyebrow{
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--warn);
+}
+.celebrationPopup__title{
+  font-size:48px;
+  font-weight:1000;
+  font-family:"Fredoka", ui-sans-serif, system-ui;
+  color:var(--text);
+  line-height:1.1;
+  margin:8px 0;
+}
+.celebrationPopup__body{
+  font-size:18px;
+  color:var(--muted);
+  line-height:1.5;
+  margin-top:12px;
+}
+
+/* Wild Confetti - Full screen particles */
+.wildConfetti{
+  position:fixed;
+  pointer-events:none;
+  left:var(--confetti-start-x);
+  top:-20px;
+  width:14px;
+  height:14px;
+  border-radius:3px;
+  z-index:1299;
+  opacity:0.9;
+  animation: wildConfettiFall var(--confetti-duration) linear var(--confetti-delay) forwards;
+}
+@keyframes wildConfettiFall{
+  0%{
+    transform: translateY(0) translateX(0) rotate(0deg) scale(var(--confetti-scale));
+    opacity: 0.95;
+  }
+  100%{
+    transform: translateY(100vh) translateX(var(--confetti-drift)) rotate(var(--confetti-rotation)) scale(var(--confetti-scale));
+    opacity: 0;
+  }
 }
 
 .footer{
@@ -1650,5 +1837,28 @@ body[data-theme="light"] .endReason {
   }
   .speedMilestonePopup__card{
     width:100%;
+    padding:20px 20px 18px;
+  }
+  .speedMilestonePopup__title{
+    font-size:28px;
+  }
+  .celebrationPopup__card{
+    width:calc(100vw - 32px);
+    padding:32px 24px;
+  }
+  .celebrationPopup__emoji{
+    font-size:64px;
+  }
+  .celebrationPopup__title{
+    font-size:36px;
+  }
+  .celebrationPopup__body{
+    font-size:16px;
+  }
+  .modal__card{
+    padding:24px;
+  }
+  .modal__title{
+    font-size:28px;
   }
 }
