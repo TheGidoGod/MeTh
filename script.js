@@ -2118,10 +2118,26 @@
     topicListPage: 0,
     correctAnswers: 0,
     speedMilestonesReached: new Set(),
+    elapsedSeconds: 0,
+    generatedMilestones: [],
   };
 
   const TOPICS_PER_PAGE = 9;
   const SPEED_MILESTONE_COUNTS = [5, 10, 20, 25, 30, 45, 50, 65, 70, 75];
+
+  // Generate random but realistic milestone thresholds
+  const generateRandomMilestones = () => {
+    const milestones = [];
+    const baseThresholds = [3, 5, 8, 12, 16, 22, 28, 35, 44, 55];
+    
+    for (const base of baseThresholds) {
+      const variance = randInt(-1, 2);
+      const threshold = Math.max(base - 1, base + variance);
+      milestones.push(threshold);
+    }
+    
+    return milestones.sort((a, b) => a - b);
+  };
 
   const CARD_THEMES = {
     addsub: {
@@ -2181,60 +2197,97 @@
     state.popupTimerId = null;
   };
 
-  const ensureSpeedMilestonePopup = () => {
-    let popup = document.getElementById("speedMilestonePopup");
+  // Create an enhanced full-screen celebration popup
+  const ensureRewardPopup = () => {
+    let popup = document.getElementById("celebrationPopup");
     if (popup) return popup;
 
     popup = document.createElement("div");
-    popup.id = "speedMilestonePopup";
-    popup.className = "speedMilestonePopup";
+    popup.id = "celebrationPopup";
+    popup.className = "celebrationPopup";
     popup.hidden = true;
     popup.setAttribute("aria-hidden", "true");
     popup.innerHTML = `
-      <div class="speedMilestonePopup__card" role="status" aria-live="polite">
-        <button class="speedMilestonePopup__close" id="speedMilestoneCloseBtn" type="button" aria-label="Close popup">×</button>
-        <div class="speedMilestonePopup__eyebrow">Speed Surprise</div>
-        <div class="speedMilestonePopup__title" id="speedMilestoneTitle">Milestone reached!</div>
-        <div class="speedMilestonePopup__body" id="speedMilestoneBody"></div>
+      <div class="celebrationPopup__backdrop"></div>
+      <div class="celebrationPopup__card" role="status" aria-live="polite">
+        <button class="celebrationPopup__close" id="celebrationCloseBtn" type="button" aria-label="Close celebration">×</button>
+        <div class="celebrationPopup__content">
+          <div class="celebrationPopup__emoji" id="celebrationEmoji">⭐</div>
+          <div class="celebrationPopup__eyebrow" id="celebrationEyebrow">Achievement!</div>
+          <div class="celebrationPopup__title" id="celebrationTitle">Incredible!</div>
+          <div class="celebrationPopup__body" id="celebrationBody"></div>
+        </div>
       </div>
     `;
     document.body.appendChild(popup);
 
-    const closeBtn = popup.querySelector("#speedMilestoneCloseBtn");
+    const closeBtn = popup.querySelector("#celebrationCloseBtn");
     closeBtn?.addEventListener("click", () => {
-      clearMilestonePopupTimer();
-      popup.hidden = true;
-      popup.setAttribute("aria-hidden", "true");
+      hideCelebration();
     });
 
     return popup;
   };
 
-  const hideSpeedMilestonePopup = () => {
+  const hideCelebration = () => {
     clearMilestonePopupTimer();
-    const popup = document.getElementById("speedMilestonePopup");
+    const popup = document.getElementById("celebrationPopup");
     if (!popup) return;
-    popup.hidden = true;
-    popup.setAttribute("aria-hidden", "true");
+    popup.classList.remove("celebrationPopup--active");
+    state.popupTimerId = window.setTimeout(() => {
+      popup.hidden = true;
+      popup.setAttribute("aria-hidden", "true");
+    }, 400);
   };
 
-  const showSpeedMilestonePopup = (milestone) => {
-    const popup = ensureSpeedMilestonePopup();
-    const title = popup.querySelector("#speedMilestoneTitle");
-    const body = popup.querySelector("#speedMilestoneBody");
-    if (title) title.textContent = milestone.title;
-    if (body) {
-      body.innerHTML = `
-        <strong>${milestone.target}</strong> questions solved.
-        <br>${milestone.message}
-      `;
-    }
+  const showCelebration = (config) => {
+    const {
+      emoji = "⭐",
+      eyebrow = "Achievement!",
+      title = "Incredible!",
+      body = "You're on fire!",
+      type = "score",
+      duration = 3500,
+    } = config;
+
+    const popup = ensureRewardPopup();
+    popup.classList.remove("celebrationPopup--score", "celebrationPopup--time");
+    popup.classList.add(`celebrationPopup--${type}`);
+    
+    const emojiEl = popup.querySelector("#celebrationEmoji");
+    const eyebrowEl = popup.querySelector("#celebrationEyebrow");
+    const titleEl = popup.querySelector("#celebrationTitle");
+    const bodyEl = popup.querySelector("#celebrationBody");
+
+    if (emojiEl) emojiEl.textContent = emoji;
+    if (eyebrowEl) eyebrowEl.textContent = eyebrow;
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.innerHTML = body;
+
     popup.hidden = false;
     popup.setAttribute("aria-hidden", "false");
+    popup.classList.add("celebrationPopup--active");
+
+    // Trigger confetti - lots of it!
+    spawnWildConfetti(70);
+
     clearMilestonePopupTimer();
     state.popupTimerId = window.setTimeout(() => {
-      hideSpeedMilestonePopup();
-    }, 3000);
+      hideCelebration();
+    }, duration);
+  };
+
+  const ensureSpeedMilestonePopup = () => ensureRewardPopup();
+  const hideSpeedMilestonePopup = () => hideCelebration();
+  const showSpeedMilestonePopup = (milestone) => {
+    showCelebration({
+      emoji: "🚀",
+      eyebrow: "Speed Milestone",
+      title: milestone.title,
+      body: `<strong>${milestone.target}</strong> questions solved.<br>${milestone.message}`,
+      type: "score",
+      duration: 3500,
+    });
   };
 
   const buildSpeedMilestone = (target) => {
@@ -2256,6 +2309,8 @@
       "You are flying through these now.",
       "That rhythm looks sharp. Keep pressing.",
       "This is the kind of streak students remember.",
+      "The focus is real right now!",
+      "You're building momentum!",
     ];
 
     return {
@@ -2267,11 +2322,44 @@
 
   const maybeTriggerSpeedMilestone = () => {
     if (state.gameMode !== "speed" && state.gameMode !== "sequential-speed") return;
-    if (!SPEED_MILESTONE_COUNTS.includes(state.correctAnswers)) return;
-    if (state.speedMilestonesReached.has(state.correctAnswers)) return;
-
-    state.speedMilestonesReached.add(state.correctAnswers);
-    showSpeedMilestonePopup(buildSpeedMilestone(state.correctAnswers));
+    
+    // Use random milestones for current session
+    if (!state.generatedMilestones.length) {
+      state.generatedMilestones = generateRandomMilestones();
+    }
+    
+    const nextMilestone = state.generatedMilestones.find(m => 
+      state.correctAnswers === m && !state.speedMilestonesReached.has(m)
+    );
+    
+    if (!nextMilestone) return;
+    
+    state.speedMilestonesReached.add(nextMilestone);
+    
+    // Vary animations based on milestone score
+    let emoji = "🚀";
+    let eyebrow = "Score Milestone";
+    let animationType = "score";
+    
+    if (nextMilestone >= 40) {
+      emoji = "⭐";
+      eyebrow = "LEGENDARY!";
+    } else if (nextMilestone >= 25) {
+      emoji = "🔥";
+      eyebrow = "ON FIRE!";
+    } else if (nextMilestone >= 15) {
+      emoji = "💪";
+      eyebrow = "Building Momentum";
+    }
+    
+    showCelebration({
+      emoji,
+      eyebrow,
+      title: `${nextMilestone} Questions!`,
+      body: `You solved <strong>${nextMilestone}</strong> problems!<br>Your momentum is incredible!`,
+      type: animationType,
+      duration: 3500,
+    });
   };
 
   const spawnConfetti = (opts = {}) => {
@@ -2308,6 +2396,36 @@
 
       layer.appendChild(piece);
       window.setTimeout(() => piece.remove(), dur + 80);
+    }
+  };
+
+  // Enhanced confetti that spans full screen
+  const spawnWildConfetti = (count = 50) => {
+    const colors = ["#6EE7FF", "#A78BFA", "#34D399", "#F9C74F", "#FF6B9D"];
+    
+    for (let i = 0; i < count; i++) {
+      const confetti = document.createElement("div");
+      confetti.className = "wildConfetti";
+      
+      const color = pick(colors);
+      const startX = Math.random() * 100;
+      const startY = -10;
+      const duration = randInt(1800, 2800);
+      const delay = randInt(0, 200);
+      const rotation = randInt(0, 360);
+      const scale = 0.5 + Math.random() * 1.5;
+      const drift = randInt(-60, 60);
+      
+      confetti.style.setProperty("--confetti-start-x", `${startX}%`);
+      confetti.style.setProperty("--confetti-duration", `${duration}ms`);
+      confetti.style.setProperty("--confetti-delay", `${delay}ms`);
+      confetti.style.setProperty("--confetti-rotation", `${rotation}deg`);
+      confetti.style.setProperty("--confetti-scale", scale);
+      confetti.style.setProperty("--confetti-drift", `${drift}px`);
+      confetti.style.background = color;
+      
+      document.body.appendChild(confetti);
+      window.setTimeout(() => confetti.remove(), duration + delay + 100);
     }
   };
 
@@ -2573,6 +2691,7 @@
     if (state.gameMode === "speed" || state.gameMode === "sequential-speed") {
       // Speed Challenge mode: count down from timeLimit
       state.timeLeft = state.timeLimit;
+      state.elapsedSeconds = 0;
       els.timerBox.style.opacity = "1";
       els.timerValue.textContent = timeToMMSS(state.timeLeft);
       
@@ -2584,6 +2703,7 @@
       
       state.timerId = setInterval(() => {
         state.timeLeft -= 1;
+        state.elapsedSeconds += 1;
         if (state.timeLeft <= 0) {
           state.timeLeft = 0;
           els.timerValue.textContent = "0:00";
