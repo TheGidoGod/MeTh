@@ -46,6 +46,8 @@
     els.endTitle = $("#endTitle");
     els.endBody = $("#endBody");
     els.playAgainBtn = $("#playAgainBtn");
+    els.shareAchievementBtn = $("#shareAchievementBtn");
+    els.downloadAchievementBtn = $("#downloadAchievementBtn");
     els.statsBtn = $("#statsBtn");
     els.statsModal = $("#statsModal");
     els.statsBody = $("#statsBody");
@@ -174,8 +176,12 @@
         <div class="modal__card">
           <div class="modal__title" id="endTitle">Run complete</div>
           <div class="modal__body" id="endBody">—</div>
-          <div class="modal__row">
+          <div class="modal__row modal__row--feature">
             <button class="btn btn--primary" id="playAgainBtn">Play again</button>
+            <button class="btn btn--secondary" id="shareAchievementBtn">Share image</button>
+            <button class="btn btn--ghost" id="downloadAchievementBtn">Download card</button>
+          </div>
+          <div class="modal__row">
             <button class="btn btn--ghost" id="changeTopicBtnModal">Pick another topic</button>
             <button class="btn btn--ghost" id="statsBtn">View stats</button>
             <button class="btn btn--ghost" id="closeModalBtn">Close</button>
@@ -2967,12 +2973,47 @@
       }
     }
     
+    const topicTitle = getTopicTitle();
+    const streakValue = Math.max(state.bestStreak, state.streak, 0);
+    const attemptedQuestions = (state.gameMode === "speed" || state.gameMode === "sequential-speed")
+      ? state.questionIndex
+      : state.totalQuestions;
+    const accuracy = attemptedQuestions > 0 ? Math.round((state.correctAnswers / attemptedQuestions) * 100) : 0;
+    const performance = getPerformanceLabel(attemptedQuestions > 0 ? state.correctAnswers / attemptedQuestions : 0);
+
     els.endTitle.textContent = title;
     els.endBody.innerHTML = `
-      <div><b>Score:</b> ${scoreText}</div>
-      <div style="margin-top:6px;"><b>Best streak:</b> ${Math.max(state.bestStreak, state.streak, 0)}</div>
-      ${highScoreHTML}
-      <div class="endReason">${reason ? reason : ""} </div>
+      <div class="endSummaryCard">
+        <div class="endSummaryHeader">
+          <div>
+            <div class="endSummaryBadge endSummaryBadge--${performance.style}">
+              ${performance.label}
+            </div>
+            <div class="endSummaryMeta">Topic: ${topicTitle}</div>
+          </div>
+          <div class="endSummaryScore">${scoreText}</div>
+        </div>
+
+        <div class="endSummaryGrid">
+          <div class="summaryStat">
+            <div class="summaryStat__label">Accuracy</div>
+            <div class="summaryStat__value">${accuracy}%</div>
+          </div>
+          <div class="summaryStat">
+            <div class="summaryStat__label">Best streak</div>
+            <div class="summaryStat__value">${streakValue}</div>
+          </div>
+          <div class="summaryStat">
+            <div class="summaryStat__label">Mode</div>
+            <div class="summaryStat__value">${formatModeLabel(state.gameMode)}</div>
+          </div>
+        </div>
+
+        ${highScoreHTML}
+        <div class="endSummaryMessage">${performance.message}</div>
+        ${reason ? `<div class="endReason">${reason}</div>` : ""}
+        <div class="shareHint">Share the achievement image or download a badge to celebrate your progress.</div>
+      </div>
     `;
 
     state.currentQuestion = null;
@@ -3310,6 +3351,226 @@
     els.endModal.setAttribute("aria-hidden", "true");
   };
 
+  const getTopicTitle = () => {
+    return state.topicId ? TOPIC_MAP[state.topicId]?.title || "Math Arcade" : "Math Arcade";
+  };
+
+  const getPerformanceLabel = (ratio) => {
+    if (ratio >= 0.9) {
+      return { label: "Legendary run", style: "great", message: "You crushed it! Keep the streak going." };
+    }
+    if (ratio >= 0.75) {
+      return { label: "Amazing effort", style: "good", message: "Strong performance — you’re learning fast!" };
+    }
+    if (ratio >= 0.5) {
+      return { label: "Solid progress", style: "neutral", message: "Nice work. Try one more run to boost your score." };
+    }
+    return { label: "Keep practicing", style: "needs-work", message: "Great effort. Every run helps you get stronger." };
+  };
+
+  const getAchievementShareText = () => {
+    const topicTitle = getTopicTitle();
+    const scoreLabel = state.gameMode === "speed"
+      ? `${state.correctAnswers} correct answers in ${state.timeLimit}s`
+      : `${state.correctAnswers} correct answers out of ${state.totalQuestions}`;
+    return `I just completed a ${topicTitle} achievement in Math Arcade!\n${scoreLabel}\nBest streak: ${Math.max(state.bestStreak, state.streak, 0)}.\nShare the image to celebrate your performance!`;
+  };
+
+  const escapeSVG = (value) => String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  const createAchievementCardSVG = ({ headline, resultText, performanceText, detailLines }) => {
+    const wrapText = (text, maxChars) => {
+      const words = String(text).split(" ");
+      const lines = [];
+      let current = "";
+      for (const word of words) {
+        if (!current) {
+          current = word;
+        } else if ((current + " " + word).length <= maxChars) {
+          current += ` ${word}`;
+        } else {
+          lines.push(current);
+          current = word;
+        }
+      }
+      if (current) lines.push(current);
+      return lines;
+    };
+
+    const headlineLines = wrapText(headline, 28);
+    const headlineText = headlineLines.map((line, index) => `
+          <tspan x="120" dy="${index === 0 ? 0 : 1.1}em">${escapeSVG(line)}</tspan>
+        `).join("");
+
+    const detailsHeight = detailLines.length * 34 + 40;
+    const details = detailLines.map((line, index) => `
+        <text x="120" y="${490 + index * 34}" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#e8eefd" opacity="0.92">${escapeSVG(line)}</text>
+      `).join("");
+
+    return `
+      <svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" xml:space="preserve">
+        <defs>
+          <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0d1324" />
+            <stop offset="100%" stop-color="#111c33" />
+          </linearGradient>
+          <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#4f6bff" />
+            <stop offset="100%" stop-color="#70daff" />
+          </linearGradient>
+          <filter id="softGlow" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#52a9ff" flood-opacity="0.18" />
+          </filter>
+        </defs>
+
+        <rect width="1200" height="675" rx="48" fill="url(#bgGrad)" />
+        <circle cx="980" cy="120" r="96" fill="rgba(109,191,255,0.14)" />
+        <circle cx="1060" cy="80" r="38" fill="rgba(255,255,255,0.12)" />
+
+        <rect x="70" y="70" width="1060" height="540" rx="44" fill="#13182d" opacity="0.96" stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+        <rect x="90" y="90" width="1020" height="160" rx="34" fill="url(#accentGrad)" filter="url(#softGlow)" />
+
+        <text x="120" y="130" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff" opacity="0.93">Math Arcade</text>
+        <text x="120" y="180" font-family="Segoe UI, Arial, sans-serif" font-size="50" font-weight="800" fill="#ffffff">${headlineText}</text>
+        <text x="120" y="285" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#e1ecff" opacity="0.92">${escapeSVG(performanceText)}</text>
+
+        <rect x="90" y="300" width="1010" height="285" rx="42" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+        <text x="130" y="370" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="800" fill="#ffffff">${escapeSVG(resultText)}</text>
+        <text x="130" y="418" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#dce5ff" opacity="0.88">Keep the streak alive and level up your score.</text>
+
+      
+        ${details}
+
+        <circle cx="1040" cy="120" r="52" fill="rgba(255,255,255,0.14)" />
+        <path d="M1018 88 L1048 92 L1068 114 L1056 138 L1030 149 L1004 138 L990 114 Z" fill="#ffffff" opacity="0.95" />
+      </svg>
+    `;
+  };
+
+  const saveBlob = (blob, filename) => {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
+  const downloadAchievementCard = async () => {
+    const topicTitle = getTopicTitle();
+    const scoreLabel = state.gameMode === "speed"
+      ? `${formatScore(state.score)} correct answers in ${state.timeLimit}s`
+      : `${formatScore(state.score)} / ${state.totalQuestions}`;
+    const attemptedQuestions = (state.gameMode === "speed" || state.gameMode === "sequential-speed")
+      ? state.questionIndex
+      : state.totalQuestions;
+    const performance = getPerformanceLabel(attemptedQuestions > 0 ? state.score / attemptedQuestions : 0);
+    const imageSvg = createAchievementCardSVG({
+      headline: `${topicTitle} Achievement`,
+      performanceText: performance.label,
+      resultText: scoreLabel,
+      detailLines: [
+        `Best streak: ${Math.max(state.bestStreak, state.streak, 0)}`,
+        `Mode: ${formatModeLabel(state.gameMode)}`,
+        `Keep going to improve your score!`
+      ]
+    });
+
+    const svgBlob = new Blob([imageSvg], { type: "image/svg+xml;charset=utf-8" });
+    const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(imageSvg)}`;
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 675;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          saveBlob(blob, `${topicTitle.replace(/\s+/g, "-").toLowerCase()}-achievement.png`);
+        } else {
+          saveBlob(svgBlob, `${topicTitle.replace(/\s+/g, "-").toLowerCase()}-achievement.svg`);
+        }
+      }, "image/png");
+    };
+    image.onerror = () => {
+      saveBlob(svgBlob, `${topicTitle.replace(/\s+/g, "-").toLowerCase()}-achievement.svg`);
+    };
+    image.src = svgDataUrl;
+  };
+
+  const shareAchievement = async () => {
+    const topicTitle = getTopicTitle();
+    const scoreLabel = state.gameMode === "speed"
+      ? `${formatScore(state.score)} correct answers in ${state.timeLimit}s`
+      : `${formatScore(state.score)} / ${state.totalQuestions}`;
+    const attemptedQuestions = (state.gameMode === "speed" || state.gameMode === "sequential-speed")
+      ? state.questionIndex
+      : state.totalQuestions;
+    const performance = getPerformanceLabel(attemptedQuestions > 0 ? state.score / attemptedQuestions : 0);
+    const svg = createAchievementCardSVG({
+      headline: `${topicTitle} Achievement`,
+      performanceText: performance.label,
+      resultText: scoreLabel,
+      detailLines: [
+        `Best streak: ${Math.max(state.bestStreak, state.streak, 0)}`,
+        `Mode: ${formatModeLabel(state.gameMode)}`,
+        `Accuracy: ${attemptedQuestions > 0 ? Math.round((state.correctAnswers / attemptedQuestions) * 100) : 0}%`]
+    });
+
+    const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    const image = new Image();
+
+    const shareText = getAchievementShareText();
+    const shareViaTextFallback = async () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        alert("Achievement text copied! Paste it into your favorite app to share.");
+        return;
+      }
+      prompt("Share this achievement:", shareText);
+    };
+
+    const shareFile = async (blob) => {
+      const file = new File([blob], `${topicTitle.replace(/\s+/g, "-").toLowerCase()}-achievement.png`, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: "Math Arcade achievement", text: shareText });
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    };
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 675;
+    const ctx = canvas.getContext("2d");
+
+    image.onload = async () => {
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(async (blob) => {
+        if (blob && await shareFile(blob)) return;
+        await shareViaTextFallback();
+      }, "image/png");
+    };
+
+    image.onerror = async () => {
+      await shareViaTextFallback();
+    };
+
+    image.src = svgDataUrl;
+  };
+
   const syncTopicPageMeta = () => {
     if (!pageTopicId) return;
     const topic = TOPIC_MAP[pageTopicId];
@@ -3439,6 +3700,12 @@
     closeModal();
     startQuiz(state.topicId, state.difficultyKey, state.gameMode, state.timeLimit);
   });
+  if (els.shareAchievementBtn) {
+    els.shareAchievementBtn.addEventListener("click", shareAchievement);
+  }
+  if (els.downloadAchievementBtn) {
+    els.downloadAchievementBtn.addEventListener("click", downloadAchievementCard);
+  }
   if (els.changeTopicBtnModal) {
     els.changeTopicBtnModal.addEventListener("click", () => {
       if (pageTopicId) {
