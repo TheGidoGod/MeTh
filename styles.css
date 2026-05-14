@@ -1075,6 +1075,13 @@ select optgroup{
   background: var(--ghostBg);
   border-color: var(--stroke);
 }
+.btn--secondary{
+  background: linear-gradient(135deg, rgba(110,231,255,.18), rgba(255,203,90,.18));
+  border-color: rgba(255,203,90,.44);
+}
+.btn--secondary:hover{
+  border-color: rgba(255,203,90,.7);
+}
 .btn--next{
   background: linear-gradient(135deg, color-mix(in srgb, var(--warn) 32%, transparent), color-mix(in srgb, var(--c) 24%, transparent));
   border-color: color-mix(in srgb, var(--warn) 58%, var(--stroke));
@@ -1370,16 +1377,21 @@ select optgroup{
   50%{ transform: scale(1.03); }
 }
 .modal__card{
-  width:min(700px, calc(100vw - 24px));
+  width: min(450px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 36px);
+  box-sizing: border-box;
   border-radius: calc(var(--radius) + 4px);
   border:2px solid var(--stroke2);
   background: linear-gradient(180deg, var(--panel2), var(--panel));
   box-shadow: 0 0 0 1px rgba(45,226,230,.1),
               var(--shadow),
               0 0 40px rgba(45,226,230,.12);
-  padding:32px;
+  padding:12px 10px;
   backdrop-filter: blur(18px);
   animation: scaleInModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
 }
 @keyframes scaleInModal{
   from{
@@ -1393,19 +1405,19 @@ select optgroup{
 }
 .modal__title{
   font-weight:1000;
-  font-size:36px;
-  margin-bottom:16px;
+  font-size:24px;
+  margin-bottom:12px;
   line-height:1.2;
 }
 .modal__body{
   color: var(--muted);
-  line-height:1.6;
-  padding:16px 16px;
-  border-radius:16px;
+  line-height:1.5;
+  padding:12px;
+  border-radius:12px;
   border:1px solid var(--stroke);
   background: var(--ghostBg);
-  min-height:80px;
-  font-size:16px;
+  min-height:60px;
+  font-size:14px;
 }
 .highScoreNew{
   margin-top:12px;
@@ -1437,10 +1449,137 @@ body[data-theme="light"] .endReason {
   opacity:0.75;
 }
 .modal__row{
-  margin-top:14px;
+  margin-top:10px;
   display:flex;
   gap:10px;
   justify-content:flex-end;
+  flex-wrap:wrap;
+}
+.modal__row--feature{
+  justify-content:center;
+}
+.endSummaryCard{
+  border-radius:14px;
+  padding:10px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.endSummaryHeader{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  min-width:0;
+}
+.endSummaryBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:.5rem .7rem;
+  border-radius:999px;
+  font-weight:800;
+  letter-spacing:.02em;
+  text-transform: uppercase;
+  font-size:10px;
+}
+.endSummaryBadge--great{ background: rgba(52,211,153,.16); color: var(--good); }
+.endSummaryBadge--good{ background: rgba(255,207,90,.14); color: var(--warn); }
+.endSummaryBadge--neutral{ background: rgba(110,231,255,.14); color: var(--a); }
+.endSummaryBadge--needs-work{ background: rgba(255,93,143,.14); color: var(--bad); }
+.endSummaryMeta{
+  margin-top:6px;
+  font-size:11px;
+  color: var(--muted);
+}
+.endSummaryScore{
+  font-size:clamp(1.3rem, 2.4vw, 2.1rem);
+  font-weight:900;
+  color: var(--text);
+  text-align:right;
+  min-width:0;
+  max-width:220px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .endSummaryHeader{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .endSummaryScore{
+    text-align:left;
+    font-size: clamp(1.1rem, 2.4vw, 1.8rem);
+  }
+  .modal__card{
+    padding:10px 8px;
+  }
+  .modal__title{
+    font-size:18px;
+  }
+  .modal__row{
+    justify-content: center;
+  }
+}
+@media (max-width: 480px) {
+  .endSummaryGrid{
+    grid-template-columns: 1fr;
+    gap:4px;
+  }
+  .summaryStat{
+    padding:10px;
+  }
+  .summaryStat__value{
+    font-size:1rem;
+  }
+  .endSummaryMessage{
+    margin-top:8px;
+    font-size:0.82rem;
+  }
+  .shareHint{
+    display:none;
+  }
+  .modal__row .btn{
+    font-size:12px;
+    padding:9px 12px;
+    min-height:36px;
+  }
+}
+.endSummaryGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(110px, 1fr));
+  gap:6px;
+  margin-top:12px;
+}
+.summaryStat{
+  border-radius:12px;
+  padding:10px;
+  background: rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.1);
+}
+.summaryStat__label{
+  text-transform: uppercase;
+  color: var(--muted);
+  font-size:9px;
+  letter-spacing:.08em;
+}
+.summaryStat__value{
+  margin-top:4px;
+  font-size:1.1rem;
+  font-weight:800;
+  color: var(--text);
+}
+.endSummaryMessage{
+  margin-top:10px;
+  font-size:0.85rem;
+  color: var(--text);
+  font-weight:700;
+  line-height:1.4;
+}
+.shareHint{
+  margin-top:8px;
+  font-size:0.78rem;
+  color: var(--muted2);
 }
 
 /* Celebration Popup - Center screen, full screen confetti */
@@ -1826,8 +1965,56 @@ body[data-theme="light"] .endReason {
     flex-wrap:wrap;
   }
   .modal__card{
-    width:calc(100vw - 12px);
+    width: min(90vw, 700px);
+    padding:16px 12px;
+    border-radius: 20px;
+  }
+  .modal__title{
+    font-size:20px;
+    margin-bottom:12px;
+  }
+  .modal__body{
+    font-size:14px;
     padding:12px;
+    min-height:60px;
+  }
+  .endSummaryCard{
+    padding:14px;
+    border-radius:16px;
+  }
+  .endSummaryHeader{
+    gap:12px;
+  }
+  .endSummaryScore{
+    font-size: clamp(1.2rem, 2.5vw, 2rem);
+  }
+  .endSummaryGrid{
+    grid-template-columns: 1fr;
+    gap:8px;
+    margin-top:16px;
+  }
+  .summaryStat{
+    padding:14px;
+  }
+  .summaryStat__value{
+    font-size:1.2rem;
+  }
+  .endSummaryMessage{
+    font-size:0.9rem;
+    margin-top:16px;
+  }
+  .shareHint{
+    font-size:0.85rem;
+    margin-top:12px;
+  }
+  .modal__row{
+    margin-top:12px;
+    gap:8px;
+  }
+  .modal__row .btn{
+    font-size:14px;
+    padding:12px 16px;
+    min-height:44px;
   }
   .speedMilestonePopup{
     top:auto;
@@ -1855,10 +2042,12 @@ body[data-theme="light"] .endReason {
   .celebrationPopup__body{
     font-size:16px;
   }
-  .modal__card{
-    padding:24px;
+  .modal__body{
+    font-size:14px;
+    padding:12px;
+    min-height:60px;
   }
   .modal__title{
-    font-size:28px;
+    font-size:20px;
   }
 }
